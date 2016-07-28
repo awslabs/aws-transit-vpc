@@ -1,0 +1,104 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "(SO0001s) - Transit VPC spoke: Creates a spoke VPC for TransitVPC testing.",
+
+  "Parameters" : {
+
+    "SpokeTag" : {
+      "Description" : "Tag to use to identify spoke VPCs to connect to Transit VPC.",
+      "Type" : "String",
+      "Default" : "transitvpc:spoke"
+    },
+    "SpokeTagValue" : {
+      "Description" : "Tag value to use to identify spoke VPCs to connect to Transit VPC.",
+      "Type" : "String",
+      "Default" : "true"
+    },
+    "VpcCidr" : {
+      "Description" : "CIDR block for Transit VPC.",
+      "Type" : "String",
+      "Default" : "10.255.0.0/16"
+    }
+  },
+  "Metadata" : {
+    "AWS::CloudFormation::Interface" : {
+     "ParameterGroups" : [
+      {
+        "Label" : { "default" : "Network Configuration" },
+        "Parameters" : [ "VpcCidr", "SpokeTag","SpokeTagValue" ]
+      }
+     ],
+     "ParameterLabels" : {
+      "SpokeTag" : { "default" : "Transit VPC Tag Name" },
+      "SpokeTagValue" : { "default" : "Transit VPC Tag Value" },
+      "VpcCidr" : { "default" : "Transit VPC CIDR Block" }
+     }
+    }
+  },
+
+  "Resources" : {
+    "SpokeVPC" : {
+      "Type" : "AWS::EC2::VPC",
+      "Properties" : {
+        "CidrBlock" : { "Ref" : "VpcCidr" },
+        "Tags" : [
+          { "Key" : "Name", "Value" : "Spoke VPC" }
+        ]
+      }
+    },
+    "VGW" : {
+      "Type" : "AWS::EC2::VPNGateway",
+      "Properties" : {
+	"Type" : "ipsec.1",
+        "Tags" : [
+          { "Key" : "Name", "Value" : "Spoke VPC VGW" },
+          { "Key" : { "Ref" : "SpokeTag" }, "Value" : { "Ref" : "SpokeTagValue" }}
+        ]
+      }
+    },
+    "AttachVGWToVPC" : {
+       "Type" : "AWS::EC2::VPCGatewayAttachment",
+       "Properties" : {
+         "VpcId" : { "Ref" : "SpokeVPC" },
+         "VpnGatewayId" : { "Ref" : "VGW" }
+       }
+    },
+    "VPCRouteTable" : {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties" : {
+        "VpcId" : { "Ref" : "SpokeVPC" },
+        "Tags" : [
+          { "Key" : "Network", "Value" : "Public" },
+          { "Key" : "Name", "Value" : "Spoke VPC" }
+        ]
+      }
+    },
+    "ProgagateRoute" : {
+     "DependsOn" : "AttachVGWToVPC",
+      "Type" : "AWS::EC2::VPNGatewayRoutePropagation",
+      "Properties" : {
+        "RouteTableIds" : [ { "Ref" : "VPCRouteTable" } ],
+        "VpnGatewayId" : { "Ref" : "VGW" }
+      }
+    }
+  },
+  "Outputs" : {
+    "VPCID" : {
+      "Description" : "VPC ID",
+      "Value" : { "Ref" : "SpokeVPC" } 
+    },
+    "CIDR" : {
+      "Description" : "VPC CIDR",
+      "Value" : { "Ref" : "VpcCidr" } 
+    },
+    "VGWID" : {
+      "Description" : "VGW ID",
+      "Value" : { "Ref" : "VGW" } 
+    },
+    "TransitVPCtags" : {
+      "Description" : "Tag name/value",
+      "Value" : { "Fn::Join": [ "", [ { "Ref" : "SpokeTag" }, " = ", { "Ref": "SpokeTagValue" } ] ] } 
+    }
+  }
+}
