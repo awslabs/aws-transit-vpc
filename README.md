@@ -1,18 +1,19 @@
 # aws-transit-vpc
-Source code for the AWS solution "Transit Network VPC (Cisco CSR). Please see the main solution page located at https://aws.amazon.com/answers/.
+Source code for the AWS solution "Transit Network VPC (Cisco CSR). Please see the main solution for the [AWS Transit VPC](https://aws.amazon.com/answers/transit-vpc/). 
+
 
 ## Cloudformation templates
 
-transit-vpc-primary-account.template
-transit-vpc-second-account.template
-transit-vpc-spoke-vpc.template
-transit-vpc-spoke-vpc-withec2.template
-transit-vpc-spoke-vpc-withec2-tsunamiudp.template
+-transit-vpc-primary-account.template
+-transit-vpc-second-account.template
+-transit-vpc-spoke-vpc.template
+-transit-vpc-spoke-vpc-withec2.template
+-transit-vpc-spoke-vpc-withec2-tsunamiudp.template
 
 ## Lambda source code
 
-transit-vpc-poller.py
-transit-vpc-push-cisco-config.py
+-transit-vpc-poller.py
+-transit-vpc-push-cisco-config.py
 
 ***
 
