@@ -12,14 +12,13 @@
 ######################################################################################################################
 
 import boto3
+from botocore.client import Config
 import ast
 import logging
 import datetime, sys, json, urllib2, urllib
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-
-bucket_region='%REGION%'
 bucket_name='%BUCKET_NAME%'
 bucket_prefix='%PREFIX%'
 
@@ -30,9 +29,7 @@ def lambda_handler(event, context):
   #    return
   
   #Retrieve EIP of transit VPN gateways from transit_vpn_config.txt
-  #s3=boto3.client('s3',region_name=bucket_region)
-
-  s3=boto3.client('s3')
+  s3=boto3.client('s3', config=Config(signature_version='s3v4'))
   log.info('Getting config file %s/%s%s',bucket_name, bucket_prefix, 'transit_vpc_config.txt')
   config=ast.literal_eval(s3.get_object(Bucket=bucket_name,Key=bucket_prefix+'transit_vpc_config.txt')['Body'].read())
 
@@ -47,8 +44,7 @@ def lambda_handler(event, context):
     ec2=boto3.client('ec2',region_name=region_id)
   
     vgws=ec2.describe_vpn_gateways(Filters=[
-      {'Name':'attachment.state','Values':['attached','attaching','detaching']},
-      {'Name':'state','Values':['available','pending','deleting']},
+      {'Name':'state','Values':['available', 'attached', 'detached']},
       {'Name':'tag:'+config['HUB_TAG'],'Values':[config['HUB_TAG_VALUE']]}
     ])
     vpns=ec2.describe_vpn_connections(Filters=[
@@ -89,7 +85,8 @@ def lambda_handler(event, context):
 	    Bucket=bucket_name,
 	    Key=bucket_prefix+'CSR1/'+region_id+'-'+vpn1['VpnConnection']['VpnConnectionId']+'.conf',
 	    ACL='bucket-owner-full-control',
-	    ServerSideEncryption='AES256'
+	    ServerSideEncryption='aws:kms',
+	    SSEKMSKeyId=config['KMS_KEY']
 	)
         vpn_config2=ec2.describe_vpn_connections(VpnConnectionIds=[vpn2['VpnConnection']['VpnConnectionId']])
         vpn_config2=vpn_config2['VpnConnections'][0]['CustomerGatewayConfiguration']
@@ -98,7 +95,8 @@ def lambda_handler(event, context):
 	    Bucket=bucket_name,
 	    Key=bucket_prefix+'CSR2/'+region_id+'-'+vpn2['VpnConnection']['VpnConnectionId']+'.conf',
 	    ACL='bucket-owner-full-control',
-	    ServerSideEncryption='AES256'
+	    ServerSideEncryption='aws:kms',
+	    SSEKMSKeyId=config['KMS_KEY']
 	)
         log.info('Pushed VPN configurations to S3...')
         if config['SENDDATA'] == "Yes":

@@ -96,13 +96,13 @@ def getBucketPrefix(bucket_name, bucket_key):
 
 def getTransitConfig(bucket_name, bucket_prefix, s3_url, config_file):
     s3=boto3.client('s3', endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
     log.info("Downloading config file: %s/%s/%s%s", s3_url, bucket_name, bucket_prefix,config_file)
     return ast.literal_eval(s3.get_object(Bucket=bucket_name,Key=bucket_prefix+config_file)['Body'].read())
 
 def putTransitConfig(bucket_name, bucket_prefix, s3_url, config_file, config):
     s3=boto3.client('s3', endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
     log.info("Uploading new config file: %s/%s/%s%s", s3_url,bucket_name, bucket_prefix,config_file)
     s3.put_object(Bucket=bucket_name,Key=bucket_prefix+config_file,Body=str(config))
 
@@ -110,7 +110,7 @@ def downloadPrivateKey(bucket_name, bucket_prefix, s3_url, prikey):
     if os.path.exists('/tmp/'+prikey):
         os.remove('/tmp/'+prikey)
     s3=boto3.client('s3', endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
     log.info("Downloading private key: %s/%s/%s%s",s3_url, bucket_name, bucket_prefix, prikey)
     s3.download_file(bucket_name,bucket_prefix+prikey, '/tmp/'+prikey)
 
@@ -118,7 +118,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
     log.info("Processing %s/%s", bucket_name, bucket_key)
 
     s3=boto3.client('s3',endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
     config=s3.get_object(Bucket=bucket_name,Key=bucket_key)
 
     xmldoc=minidom.parseString(config['Body'].read())
@@ -230,7 +230,12 @@ def lambda_handler(event, context):
     log.info("--- %s seconds ---", (time.time() - stime))
     #Download private key file from secure S3 bucket
     downloadPrivateKey(bucket_name, bucket_prefix, endpoint_url[bucket_region], config['PRIVATE_KEY'])
+    log.info("Reading downloaded private key into memory.")
     k = paramiko.RSAKey.from_private_key_file("/tmp/"+config['PRIVATE_KEY'])
+    #Delete the temp copy of the private key
+    os.remove("/tmp/"+config['PRIVATE_KEY'])
+    log.info("Deleted downloaded private key.")
+
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -263,6 +268,8 @@ def lambda_handler(event, context):
     pushConfig(ssh,csr_config)
     log.info("--- %s seconds ---", (time.time() - stime))
     ssh.close()
+    
+
     return
     {
         'message' : "Script execution completed. See Cloudwatch logs for complete output"
