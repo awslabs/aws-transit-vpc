@@ -4,7 +4,17 @@
   "Description" : "(SO0001s) - Transit VPC spoke with ec2 tsunamiUDP: Creates a spoke VPC for TransitVPC testing.",
 
   "Parameters" : {
-
+    "PreferredPathTag" : {
+      "Description" : "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
+      "Type" : "String",
+      "Default" : "transitvpc:preferred-path"
+    },
+    "PreferredPathValue" : {
+      "Description" : "Specify if there is a preferred CSR to control the traffic flow through the Transit VPC (e.g. when integrating with stateful on-prem firewalls).",
+      "Type" : "String",
+      "Default" : "none",
+      "AllowedValues" : [ "none", "CSR1", "CSR2" ]
+    },
     "HubTag" : {
       "Description" : "Tag to use to identify hub VPCs to connect to Transit VPC.",
       "Type" : "String",
@@ -19,11 +29,6 @@
       "Description" : "CIDR block for Transit VPC.",
       "Type" : "String",
       "Default" : "10.255.0.0/16"
-    },
-    "PubSubnet" : {
-      "Description" : "Address range for Test Transit VPC subnet 1",
-      "Type" : "String",
-      "Default" : "10.255.0.0/24"
     },
     "KeyName": {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -49,12 +54,14 @@
       },
       {
         "Label" : { "default" : "Network Configuration" },
-        "Parameters" : [ "VpcCidr", "PubSubnet", "HubTag","HubTagValue" ]
+        "Parameters" : [ "VpcCidr", "HubTag","HubTagValue", "PreferredPathTag", "PreferredPathValue" ]
       }
      ],
      "ParameterLabels" : {
       "HubTag" : { "default" : "Transit VPC Tag Name" },
       "HubTagValue" : { "default" : "Transit VPC Tag Value" },
+      "PreferredPathTag" : { "default" : "Preferred VPN Endpoint Tag Name" },
+      "PreferredPathValue" : { "default" : "Preferred Path" },
       "VpcCidr" : { "default" : "Transit VPC CIDR Block" }
      }
     }
@@ -114,61 +121,6 @@
       "hs1.8xlarge" : { "Arch" : "HVM64"  },
       "cr1.8xlarge" : { "Arch" : "HVM64"  },
       "cc2.8xlarge" : { "Arch" : "HVM64"  }
-    },
-	"AWSInstanceType2NATArch" : {
-      "t1.micro"    : { "Arch" : "NATPV64"   },
-      "t2.nano"     : { "Arch" : "NATHVM64"  },
-      "t2.micro"    : { "Arch" : "NATHVM64"  },
-      "t2.small"    : { "Arch" : "NATHVM64"  },
-      "t2.medium"   : { "Arch" : "NATHVM64"  },
-      "t2.large"    : { "Arch" : "NATHVM64"  },
-      "m1.small"    : { "Arch" : "NATPV64"   },
-      "m1.medium"   : { "Arch" : "NATPV64"   },
-      "m1.large"    : { "Arch" : "NATPV64"   },
-      "m1.xlarge"   : { "Arch" : "NATPV64"   },
-      "m2.xlarge"   : { "Arch" : "NATPV64"   },
-      "m2.2xlarge"  : { "Arch" : "NATPV64"   },
-      "m2.4xlarge"  : { "Arch" : "NATPV64"   },
-      "m3.medium"   : { "Arch" : "NATHVM64"  },
-      "m3.large"    : { "Arch" : "NATHVM64"  },
-      "m3.xlarge"   : { "Arch" : "NATHVM64"  },
-      "m3.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "m4.large"    : { "Arch" : "NATHVM64"  },
-      "m4.xlarge"   : { "Arch" : "NATHVM64"  },
-      "m4.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "m4.4xlarge"  : { "Arch" : "NATHVM64"  },
-      "m4.10xlarge" : { "Arch" : "NATHVM64"  },
-      "c1.medium"   : { "Arch" : "NATPV64"   },
-      "c1.xlarge"   : { "Arch" : "NATPV64"   },
-      "c3.large"    : { "Arch" : "NATHVM64"  },
-      "c3.xlarge"   : { "Arch" : "NATHVM64"  },
-      "c3.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "c3.4xlarge"  : { "Arch" : "NATHVM64"  },
-      "c3.8xlarge"  : { "Arch" : "NATHVM64"  },
-      "c4.large"    : { "Arch" : "NATHVM64"  },
-      "c4.xlarge"   : { "Arch" : "NATHVM64"  },
-      "c4.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "c4.4xlarge"  : { "Arch" : "NATHVM64"  },
-      "c4.8xlarge"  : { "Arch" : "NATHVM64"  },
-      "g2.2xlarge"  : { "Arch" : "NATHVMG2"  },
-      "g2.8xlarge"  : { "Arch" : "NATHVMG2"  },
-      "r3.large"    : { "Arch" : "NATHVM64"  },
-      "r3.xlarge"   : { "Arch" : "NATHVM64"  },
-      "r3.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "r3.4xlarge"  : { "Arch" : "NATHVM64"  },
-      "r3.8xlarge"  : { "Arch" : "NATHVM64"  },
-      "i2.xlarge"   : { "Arch" : "NATHVM64"  },
-      "i2.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "i2.4xlarge"  : { "Arch" : "NATHVM64"  },
-      "i2.8xlarge"  : { "Arch" : "NATHVM64"  },
-      "d2.xlarge"   : { "Arch" : "NATHVM64"  },
-      "d2.2xlarge"  : { "Arch" : "NATHVM64"  },
-      "d2.4xlarge"  : { "Arch" : "NATHVM64"  },
-      "d2.8xlarge"  : { "Arch" : "NATHVM64"  },
-      "hi1.4xlarge" : { "Arch" : "NATHVM64"  },
-      "hs1.8xlarge" : { "Arch" : "NATHVM64"  },
-      "cr1.8xlarge" : { "Arch" : "NATHVM64"  },
-      "cc2.8xlarge" : { "Arch" : "NATHVM64"  }
     },
     "AWSRegionArch2AMI" : {
       "us-east-1"        : {"PV64" : "ami-5fb8c835", "HVM64" : "ami-60b6c60a", "HVMG2" : "ami-e998ea83"},
@@ -235,6 +187,7 @@
 	"Type" : "ipsec.1",
         "Tags" : [
           { "Key" : "Name", "Value" : "Spoke VPC VGW" },
+          { "Key" : { "Ref" : "PreferredPathTag" }, "Value" : { "Ref" : "PreferredPathValue" }},
           { "Key" : { "Ref" : "HubTag" }, "Value" : { "Ref" : "HubTagValue" }}
         ]
       }
@@ -258,7 +211,7 @@
       "Type" : "AWS::EC2::Subnet",
       "Properties" : {
         "VpcId" : { "Ref" : "SpokeVPC" },
-        "CidrBlock" : { "Ref" : "PubSubnet" },
+        "CidrBlock" : { "Ref" : "VpcCidr" },
         "AvailabilityZone" : { "Fn::Select": ["0", {"Fn::GetAZs": ""}] },
         "Tags" : [
           { "Key" : "Network", "Value" : "Public" },
@@ -312,7 +265,7 @@
                         "cd /media/ephemeral0 \n",
                         "wget https://s3.amazonaws.com/solutions-master/transit-vpc/testing/test1Gb.db \n",
                         "wget https://s3.amazonaws.com/solutions-master/transit-vpc/testing/test100Mb.db \n",
-                        "chown -R ec2-user:e2c-user /media/ephemeral0\n"                       
+                        "chown -R ec2-user:ec2-user /media/ephemeral0\n"                       
                     ]
                 ]
             }
@@ -336,13 +289,13 @@
           "IpProtocol" : "tcp",
           "FromPort" : "46224",
           "ToPort" : "46224",
-          "CidrIp" : "0.0.0.0/0"
+          "CidrIp" : "10.0.0.0/8"
         },
 		{
           "IpProtocol" : "udp",
           "FromPort" : "46224",
           "ToPort" : "46224",
-          "CidrIp" : "0.0.0.0/0"
+          "CidrIp" : "10.0.0.0/8"
         }
         ]
       }
@@ -372,6 +325,10 @@
     "TransitVPCtags" : {
       "Description" : "Tag name/value",
       "Value" : { "Fn::Join": [ "", [ { "Ref" : "HubTag" }, " = ", { "Ref": "HubTagValue" } ] ] } 
+    },
+    "TransitVPCPath" : {
+      "Description" : "Tag name/value",
+      "Value" : { "Fn::Join": [ "", [ { "Ref" : "PreferredPathTag" }, " = ", { "Ref": "PreferredPathValue" } ] ] } 
     },
     "EC2IP" : {
       "Description" : "IP Address for EC2Instance",
