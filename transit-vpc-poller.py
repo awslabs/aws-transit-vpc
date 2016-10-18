@@ -130,6 +130,10 @@ def lambda_handler(event, context):
     ])
     #Process all the VGWs in the region
     for vgw in vgws['VpnGateways']:
+      #Check to see if the VGW has tags, if not, then we should skip it
+      if vgw.get('Tags', '') == '':
+        continue
+
       #Put all of the VGW tags into a dict for easier processing
       vgwTags = getTags(vgw['Tags'])
 
