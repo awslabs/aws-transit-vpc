@@ -585,7 +585,8 @@
      "Properties": {
        "ServiceToken": { "Fn::GetAtt" : ["SolutionHelper", "Arn"] },
        "Region": { "Ref": "AWS::Region" },
-       "CreateRandomPassword" : { "Fn::FindInMap" : [ "Function", "Csr", "PasswordLength"]}
+       "CreateRandomPassword" : { "Fn::FindInMap" : [ "Function", "Csr", "PasswordLength"]},
+       "RandomPasswordSpecialCharacters": "False"
      }
    },
    "CiscoConfigFunctionRole": {
