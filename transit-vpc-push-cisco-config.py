@@ -27,6 +27,7 @@ config_file='transit_vpc_config.txt'
 #These S3 endpoint URLs are provided to support VPC endpoints for S3 in regions such as Frankfort that require explicit region endpoint definition
 endpoint_url = {
   "us-east-1" : "https://s3.amazonaws.com",
+  "us-east-2" : "https://s3-us-east-2.amazonaws.com",
   "us-west-1" : "https://s3-us-west-1.amazonaws.com",
   "us-west-2" : "https://s3-us-west-2.amazonaws.com",
   "eu-west-1" : "https://s3-eu-west-1.amazonaws.com",
