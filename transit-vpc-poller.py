@@ -56,7 +56,7 @@ def updateConfigXML(xml, config, vgwTags, account_id, csr_number):
 
   #Configure preferred transit VPC path
   newXml = xmldoc.createElement("preferred_path")
-  newXml.appendChild(xmldoc.createTextNode(vgwTags.get(config['PREFERRED_PATH_TAG'], 'none')))
+  newXml.appendChild(xmldoc.createTextNode(vgwTags.get(config.get('PREFERRED_PATH_TAG', 'none'), 'none')))
   transitConfig.appendChild(newXml)
 
   #Add transit config to XML
@@ -76,7 +76,7 @@ def sendAnonymousData(config, vgwTags, region_id, vpn_connections):
       dataDict['status'] = "create"  
     else:
       dataDict['status'] = "delete"
-    dataDict['preferred_path'] = vgwTags.get(config['PREFERRED_PATH_TAG'], 'none')
+    dataDict['preferred_path'] = vgwTags.get(config.get('PREFERRED_PATH_TAG','none'), 'none')
     dataDict['version'] = '3'
     postDict['Data'] = dataDict
     postDict['TimeStamp'] = str(datetime.datetime.now())
