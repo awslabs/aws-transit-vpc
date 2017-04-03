@@ -35,20 +35,28 @@
       "Type" : "String",
       "Default" : "64512"
     },
-    "VpcCidr" : {
-      "Description" : "CIDR block for Transit VPC.",
+    "CreateVPCEndpoint" : {
+      "Description" : "Do you want an S3 endpoint created in this VPC?",
       "Type" : "String",
-      "Default" : "100.64.127.224/27"
+      "Default" : "Yes",
+      "AllowedValues" : ["Yes", "No"]
     },
-    "PubSubnet1" : {
-      "Description" : "Address range for Transit VPC subnet to be created in AZ1.",
+    "VPCRouteTable" : {
+      "Description" : "Route table ID for S3 endpoint to update with S3 routes (this value is ignored if an S3 endpoint is not created).",
       "Type" : "String",
-      "Default" : "100.64.127.224/28"
+      "Default" : "rtb-12345678"
     },
-    "PubSubnet2" : {
-      "Description" : "Address range for Transit VPC subnet to be created in AZ2.",
-      "Type" : "String",
-      "Default" : "100.64.127.240/28"
+    "TransitVPC" : {
+      "Description" : "Existing VPC to deploy the CSRs into.",
+      "Type" : "AWS::EC2::VPC::Id"
+    },
+    "VPCPubSub1" : {
+      "Description" : "Subnet for the first CSR (ideally in first AZ).",
+      "Type" : "AWS::EC2::Subnet::Id"
+    },
+    "VPCPubSub2" : {
+      "Description" : "Subnet for the second CSR (ideally a second AZ).",
+      "Type" : "AWS::EC2::Subnet::Id"
     },
     "CSRType" : {
       "Description" : "Maximum network througput required for CSR instances.",
@@ -89,6 +97,7 @@
 		""
 	]}
     ]},
+   "CreateS3Endpoint" : {"Fn::Equals" : [{"Ref" : "CreateVPCEndpoint"}, "Yes"]},
    "EnableTerm" : {"Fn::Equals" : [{"Ref" : "TerminationProtection"}, "Yes"]},
    "SendData" : {"Fn::Equals" : [{"Ref" : "SendAnonymousData"}, "Yes"]}
   },
@@ -105,7 +114,7 @@
       },
       {
         "Label" : { "default" : "Network Configuration" },
-        "Parameters" : [ "VpcCidr", "PubSubnet1", "PubSubnet2","BgpAsn","SpokeTag","SpokeTagValue","PreferredPathTag" ]
+        "Parameters" : [ "TransitVPC", "VPCPubSub1", "VPCPubSub2","CreateVPCEndpoint", "VPCRouteTable","BgpAsn","SpokeTag","SpokeTagValue","PreferredPathTag" ]
       },
       {
         "Label": { "default": "Anonymous Metrics Request" },
@@ -117,9 +126,11 @@
       "SpokeTag" : { "default" : "Spoke VPC Tag Name" },
       "SpokeTagValue" : { "default" : "Spoke VPC Tag Value" },
       "PreferredPathTag" : { "default" : "Preferred VPN Endpoint Tag Name" },
-      "VpcCidr" : { "default" : "Transit VPC CIDR Block" },
-      "PubSubnet1" : { "default" : "1st Subnet Network" },
-      "PubSubnet2" : { "default" : "2nd Subnet Network" },
+      "TransitVPC" : { "default" : "Existing VPC ID" },
+      "VPCPubSub1" : { "default" : "1st Subnet Network" },
+      "VPCPubSub2" : { "default" : "2nd Subnet Network" },
+      "CreateVPCEndpoint" : { "default" : "Create S3 Endpoint" },
+      "VPCRouteTable" : { "default" : "Route Table ID" },
       "CSRType" : { "default" : "CSR Throughput Requirements" },
       "KeyName" : { "default" : "SSH Key to access CSR" },
       "S3Prefix" : { "default" : "Prefix for S3 Objects" },
@@ -262,74 +273,9 @@
         }
       }
     },
-    "TransitVPC" : {
-      "Type" : "AWS::EC2::VPC",
-      "Properties" : {
-        "CidrBlock" : { "Ref" : "VpcCidr" },
-        "Tags" : [
-          { "Key" : "Name", "Value" : "Transit VPC" }
-        ]
-      }
-    },
-    "VPCPubSub1" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "TransitVPC" },
-        "CidrBlock" : { "Ref" : "PubSubnet1" },
-        "AvailabilityZone" : { "Fn::Select": ["0", {"Fn::GetAZs": ""}] },
-        "Tags" : [
-          { "Key" : "Network", "Value" : "Public" },
-          { "Key" : "Name", "Value" : "Transit VPC Subnet1" }
-        ]
-      }
-    },
-    "VPCPubSub2" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "TransitVPC" },
-        "CidrBlock" : { "Ref" : "PubSubnet2" },
-        "AvailabilityZone" : { "Fn::Select": ["1", {"Fn::GetAZs": ""}] },
-        "Tags" : [
-          { "Key" : "Network", "Value" : "Public" },
-          { "Key" : "Name", "Value" : "Transit VPC Subnet2" }
-        ]
-      }
-    },
-    "IGW" : {
-      "Type" : "AWS::EC2::InternetGateway",
-      "Properties" : {
-        "Tags" : [
-          { "Key" : "Name", "Value" : "Transit VPC IGW" }
-        ]
-      }
-    },
-    "IGWToInternet" : {
-       "Type" : "AWS::EC2::VPCGatewayAttachment",
-       "Properties" : {
-         "VpcId" : { "Ref" : "TransitVPC" },
-         "InternetGatewayId" : { "Ref" : "IGW" }
-       }
-    },
-    "VPCRouteTable" : {
-      "Type" : "AWS::EC2::RouteTable",
-      "Properties" : {
-        "VpcId" : { "Ref" : "TransitVPC" },
-        "Tags" : [
-          { "Key" : "Network", "Value" : "Public" },
-          { "Key" : "Name", "Value" : "Transit VPC" }
-        ]
-      }
-    },
-    "VPCPublicRoute" : {
-      "Type" : "AWS::EC2::Route",
-      "Properties" : {
-        "RouteTableId" : { "Ref" : "VPCRouteTable" },
-        "DestinationCidrBlock" : "0.0.0.0/0",
-        "GatewayId" : { "Ref" : "IGW" }
-      }
-    },
     "S3Endpoint" : {
       "Type" : "AWS::EC2::VPCEndpoint",
+      "Condition" : "CreateS3Endpoint",
       "Properties" : {
         "PolicyDocument" : {
           "Version":"2012-10-17",
@@ -343,20 +289,6 @@
         "RouteTableIds" : [ {"Ref" : "VPCRouteTable"} ],
         "ServiceName" : { "Fn::Join": [ "", [ "com.amazonaws.", { "Ref": "AWS::Region" }, ".s3" ] ] },
         "VpcId" : {"Ref" : "TransitVPC"}
-      }
-    },
-    "VPCPubSubnetRouteTableAssociation1" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "VPCPubSub1" },
-        "RouteTableId" : { "Ref" : "VPCRouteTable" }
-      }
-    },
-    "VPCPubSubnetRouteTableAssociation2" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "VPCPubSub2" },
-        "RouteTableId" : { "Ref" : "VPCRouteTable" }
       }
     },
     "CsrEip1" : {
@@ -883,6 +815,8 @@
                                "'LicenseModel': '", {"Ref": "LicenseModel"}, "'",
                                "'TerminationProtection': '", {"Ref": "TerminationProtection"}, "'",
                                "'SendAnonymousData': '", {"Ref": "SendAnonymousData"}, "'",
+                               "'CreateVPCEndpoint': '", {"Ref": "CreateVPCEndpoint"}, "'",
+                               "'CreateVPC': 'No'",
                           "}",
                 "}"
               ]]
