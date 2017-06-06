@@ -16,7 +16,7 @@
   "Mappings" : {
     "Function" : {
       "Poller" : { 
-	"CodeLocation" : "solutions-reference/transit-vpc/v3/transit-vpc-poller.py",
+	"CodeLocation" : "solutions-reference/transit-vpc/v4/transit-vpc-poller.py",
 	"Name" : "vgw-poller",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
         "Runtime": "python2.7",

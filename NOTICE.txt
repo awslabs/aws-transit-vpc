@@ -1,2 +1,2 @@
-EC2 Scheduler
+Transit VPC
 Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved. 

@@ -143,7 +143,7 @@
   "Mappings" : {
     "Function" : {
       "Configurator" : { 
-	"CodeLocation" : "solutions-reference/transit-vpc/v3/transit-vpc-push-cisco-config.zip",
+	"CodeLocation" : "solutions-reference/transit-vpc/v4/transit-vpc-push-cisco-config.zip",
 	"CodeRegion" : "us-east-1",
 	"Name" : "cisco-configurator",
         "Description": "Transit VPC: This function is invoked when a generic VPN configuration is placed in an S3 bucket - it converts the generic information into Cisco IOS specific commands and pushes the config to transit VPC routers.",
@@ -152,7 +152,7 @@
         "MemorySize": "128"
       },
       "Poller" : { 
-	"CodeLocation" : "solutions-reference/transit-vpc/v3/transit-vpc-poller.py",
+	"CodeLocation" : "solutions-reference/transit-vpc/v4/transit-vpc-poller.py",
 	"CodeRegion" : "us-east-1",
 	"Name" : "vgw-poller",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
@@ -173,18 +173,20 @@
       }
     },
     "CiscoCsrAMI" : {
-      "us-east-1"      : { "BYOL" : "ami-d17520c6", "LicenseIncluded" : "ami-53742144" },
-      "us-east-2"      : { "BYOL" : "ami-e7104a82", "LicenseIncluded" : "" },
-      "us-west-2"      : { "BYOL" : "ami-1ed2087e", "LicenseIncluded" : "ami-c1df05a1" },
-      "us-west-1"      : { "BYOL" : "ami-75501815", "LicenseIncluded" : "ami-77501817" },
-      "eu-west-1"      : { "BYOL" : "ami-5084c923", "LicenseIncluded" : "ami-858ac7f6" },
-      "eu-central-1"   : { "BYOL" : "ami-6602fc09", "LicenseIncluded" : "ami-b707f9d8" },
-      "ap-south-1"     : { "BYOL" : "ami-cd7e0aa2", "LicenseIncluded" : "ami-f17a0e9e" },
-      "ap-southeast-1" : { "BYOL" : "ami-f81bbc9b", "LicenseIncluded" : "ami-a018bfc3" },
-      "ap-southeast-2" : { "BYOL" : "ami-e7e7d584", "LicenseIncluded" : "ami-a4e7d5c7" },
-      "ap-northeast-1" : { "BYOL" : "ami-f6ba1f97", "LicenseIncluded" : "ami-62862303" },
-      "ap-northeast-2" : { "BYOL" : "ami-2cc01442", "LicenseIncluded" : "ami-12c1157c" },
-      "sa-east-1"      : { "BYOL" : "ami-7a940916", "LicenseIncluded" : "ami-83910cef" }
+      "us-east-1"      : { "BYOL" : "ami-23f79835", "LicenseIncluded" : "ami-d5fa95c3" },
+      "us-east-2"      : { "BYOL" : "ami-541e3931", "LicenseIncluded" : "ami-051c3b60" },
+      "us-west-2"      : { "BYOL" : "ami-119b0071", "LicenseIncluded" : "ami-33e57e53" },
+      "us-west-1"      : { "BYOL" : "ami-dc9bbcbc", "LicenseIncluded" : "ami-9b9abdfb" },
+      "eu-west-1"      : { "BYOL" : "ami-48f2ff2e", "LicenseIncluded" : "ami-d5f1fcb3" },
+      "eu-west-2"      : { "BYOL" : "ami-35a5b151", "LicenseIncluded" : "ami-5fb9ad3b" },
+      "eu-central-1"   : { "BYOL" : "ami-7b27f814", "LicenseIncluded" : "ami-a72bf4c8" },
+      "ca-central-1"   : { "BYOL" : "ami-ab8d31cf", "LicenseIncluded" : "ami-9f8c30fb" },
+      "ap-south-1"     : { "BYOL" : "ami-25d1a34a", "LicenseIncluded" : "ami-8ded9fe2" },
+      "ap-southeast-1" : { "BYOL" : "ami-bf269cdc", "LicenseIncluded" : "ami-99209afa" },
+      "ap-southeast-2" : { "BYOL" : "ami-62cec501", "LicenseIncluded" : "ami-d6cfc4b5" },
+      "ap-northeast-1" : { "BYOL" : "ami-827041e5", "LicenseIncluded" : "ami-b57544d2" },
+      "ap-northeast-2" : { "BYOL" : "ami-60a77a0e", "LicenseIncluded" : "ami-8ca479e2" },
+      "sa-east-1"      : { "BYOL" : "ami-43b6da2f", "LicenseIncluded" : "ami-eab6da86" }
     },
     "CsrInstance" : {
       "2x500Mbps"   : { "Type" : "c4.large",   "Bandwidth" : "500000" },
@@ -335,7 +337,7 @@
 	  "ios-config-9=\"crypto ipsec transform-set ipsec-prop-vpn-aws esp-aes 128 esp-sha-hmac\"\n",
 	  "ios-config-10=\"mode tunnel\"\n",
 	  "ios-config-11=\"crypto ipsec df-bit clear\"\n",
-	  "ios-config-12=\"crypto isakmp keepalive 10 10 on-demand\"\n",
+	  "ios-config-12=\"crypto isakmp keepalive 15 10 on-demand\"\n",
 	  "ios-config-13=\"crypto ipsec security-association replay window-size 1024\"\n",
 	  "ios-config-14=\"crypto ipsec fragmentation before-encryption\"\n",
 	  "ios-config-15=\"crypto ipsec profile ipsec-vpn-aws\"\n",
@@ -384,7 +386,7 @@
 	  "ios-config-9=\"crypto ipsec transform-set ipsec-prop-vpn-aws esp-aes 128 esp-sha-hmac\"\n",
 	  "ios-config-10=\"mode tunnel\"\n",
 	  "ios-config-11=\"crypto ipsec df-bit clear\"\n",
-	  "ios-config-12=\"crypto isakmp keepalive 10 10 on-demand\"\n",
+	  "ios-config-12=\"crypto isakmp keepalive 15 10 on-demand\"\n",
 	  "ios-config-13=\"crypto ipsec security-association replay window-size 1024\"\n",
 	  "ios-config-14=\"crypto ipsec fragmentation before-encryption\"\n",
 	  "ios-config-15=\"crypto ipsec profile ipsec-vpn-aws\"\n",

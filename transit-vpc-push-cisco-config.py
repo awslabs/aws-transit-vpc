@@ -31,7 +31,9 @@ endpoint_url = {
   "us-west-1" : "https://s3-us-west-1.amazonaws.com",
   "us-west-2" : "https://s3-us-west-2.amazonaws.com",
   "eu-west-1" : "https://s3-eu-west-1.amazonaws.com",
+  "eu-west-2" : "https://s3-eu-west-2.amazonaws.com",
   "eu-central-1" : "https://s3-eu-central-1.amazonaws.com",
+  "ca-central-1" : "https://s3-ca-central-1.amazonaws.com",
   "ap-northeast-1" : "https://s3-ap-northeast-1.amazonaws.com",
   "ap-northeast-2" : "https://s3-ap-northeast-2.amazonaws.com",
   "ap-south-1" : "https://s3-ap-south-1.amazonaws.com",
@@ -276,6 +278,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         config_text.append('  keyring keyring-{}-{}'.format(vpn_connection_id,tunnelId))
         config_text.append('exit')
         config_text.append('interface Tunnel{}'.format(tunnelId))
+	config_text.append('  description {} from {} to {} for account {}'.format(vpn_connection_id, vpn_gateway_id, customer_gateway_id, account_id))
         config_text.append('  ip vrf forwarding {}'.format(vpn_connection_id))
         config_text.append('  ip address {} 255.255.255.252'.format(customer_gateway_tunnel_inside_address_ip_address))
         config_text.append('  ip virtual-reassembly')
