@@ -10,7 +10,8 @@
     "BucketPrefix" : {
       "Description" : "S3 object prefix for storing VPN configuration.",
       "Type" : "String",
-      "Default" : "vpnconfigs/"
+      "Default" : "vpnconfigs/",
+      "AllowedPattern": "^[a-z0-9A-Z_/-./]*/$"
     }
   },
   "Mappings" : {
