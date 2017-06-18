@@ -65,7 +65,8 @@
     "S3Prefix" : {
       "Description" : "S3 prefix to append before S3 key names.",
       "Type" : "String",
-      "Default" : "vpnconfigs/"
+      "Default" : "vpnconfigs/",
+      "AllowedPattern": "^[a-z0-9A-Z_/-./]*/$"
     },
     "AccountId" : {
       "Description" : "Another AWS Account ID to authorize access to VPN Config S3 bucket (for example bucket and KMS key policies).",
@@ -85,7 +86,7 @@
   "Conditions" : {
     "AuthorizeAnotherAccount" : {"Fn::Not" : [
 	{"Fn::Equals" : [
-		{"Ref": "AccountId"}, 
+		{"Ref": "AccountId"},
 		""
 	]}
     ]},
@@ -131,7 +132,7 @@
   },
   "Mappings" : {
     "Function" : {
-      "Configurator" : { 
+      "Configurator" : {
 	"CodeLocation" : "solutions-reference/transit-vpc/v4/transit-vpc-push-cisco-config.zip",
 	"CodeRegion" : "us-east-1",
 	"Name" : "cisco-configurator",
@@ -140,7 +141,7 @@
         "Timeout": "300",
         "MemorySize": "128"
       },
-      "Poller" : { 
+      "Poller" : {
 	"CodeLocation" : "solutions-reference/transit-vpc/v4/transit-vpc-poller.py",
 	"CodeRegion" : "us-east-1",
 	"Name" : "vgw-poller",
@@ -231,7 +232,7 @@
 	    ] },
             "Action": [
               "kms:*"
-            ], 
+            ],
             "Resource": "*"
           },
 	  {
@@ -249,7 +250,7 @@
               "kms:ReEncrypt*",
               "kms:GenerateDataKey*",
               "kms:DescribeKey"
-            ], 
+            ],
             "Resource": "*"
           } ]
         }
@@ -393,7 +394,7 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
 	  "ios-config-1=\"username ",
 	  { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]},
-	  " priv 15 pass ", 
+	  " priv 15 pass ",
 	  { "Fn::GetAtt" : [ "CreateRandomPassword" , "Password" ] },"\"\n",
 	  "ios-config-2=\"service password-encryption\"\n",
 	  "ios-config-3=\"crypto isakmp policy 200\"\n",
@@ -442,7 +443,7 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
 	  "ios-config-1=\"username ",
 	  { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]},
-	  " priv 15 pass ", 
+	  " priv 15 pass ",
 	  { "Fn::GetAtt" : [ "CreateRandomPassword" , "Password" ] },"\"\n",
 	  "ios-config-2=\"service password-encryption\"\n",
 	  "ios-config-3=\"crypto isakmp policy 200\"\n",
@@ -573,8 +574,8 @@
        "Region": { "Ref": "AWS::Region" },
        "CreateSshKey" : { "Fn::Join": ["", [
 		"{ 'Bucket' : '",{ "Ref" : "VPNConfigS3Bucket" },"', ",
-		"'SSEKMSKeyId' : 'arn:aws:kms:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":key/", { "Ref" : "KMSKey" }, "', ", 
-		"'PrivateKey' : '", { "Ref" : "S3Prefix" }, { "Fn::FindInMap" : [ "Function", "Csr", "PrivateKey"]}, "', ", 
+		"'SSEKMSKeyId' : 'arn:aws:kms:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":key/", { "Ref" : "KMSKey" }, "', ",
+		"'PrivateKey' : '", { "Ref" : "S3Prefix" }, { "Fn::FindInMap" : [ "Function", "Csr", "PrivateKey"]}, "', ",
 		"'PublicKey' : '", { "Ref" : "S3Prefix" }, { "Fn::FindInMap" : [ "Function", "Csr", "PublicKey"]}, "' ",
 		"}"
 	]] }
@@ -685,8 +686,8 @@
 	]] },
        "StoreInS3KMS" : { "Fn::Join": ["", [
 		"[{ 'Bucket' : '",{ "Ref" : "VPNConfigS3Bucket" },"', ",
-		"'Key' : '", { "Ref" : "S3Prefix" }, "transit_vpc_config.txt', ", 
-		"'SSEKMSKeyId' : 'arn:aws:kms:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":key/", { "Ref" : "KMSKey" }, "', ", 
+		"'Key' : '", { "Ref" : "S3Prefix" }, "transit_vpc_config.txt', ",
+		"'SSEKMSKeyId' : 'arn:aws:kms:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":key/", { "Ref" : "KMSKey" }, "', ",
 		"'Body': \"{",
 		    "'UUID':'",{"Fn::GetAtt": [ "CreateUniqueID", "UUID" ] },"',",
 		    "'SENDDATA':'",{"Ref" : "SendAnonymousData"},"',",
@@ -764,7 +765,7 @@
 		}
 	     ]
         }
-      } 
+      }
     },
    "PollerFunct": {
      "DependsOn" : "CiscoConfigFunct",
@@ -895,35 +896,35 @@
   "Outputs" : {
     "CSR1" : {
       "Description" : "IP Address for CSR1",
-      "Value" : { "Fn::GetAtt" : [ "VpcCsr1", "PublicIp" ] } 
+      "Value" : { "Fn::GetAtt" : [ "VpcCsr1", "PublicIp" ] }
     },
     "CSR2" : {
       "Description" : "IP Address for CSR2",
-      "Value" : { "Fn::GetAtt" : [ "VpcCsr2", "PublicIp" ] } 
+      "Value" : { "Fn::GetAtt" : [ "VpcCsr2", "PublicIp" ] }
     },
     "ConfigS3Bucket" : {
       "Description" : "S3 bucket for storing VPN configuration information.",
-      "Value" : { "Ref" : "VPNConfigS3Bucket" } 
+      "Value" : { "Ref" : "VPNConfigS3Bucket" }
     },
     "BucketPrefix" : {
       "Description" : "S3 prefix for storing VPN configuration information.",
-      "Value" : { "Ref" : "S3Prefix" } 
+      "Value" : { "Ref" : "S3Prefix" }
     },
     "SpokeVPCTag" : {
       "Description" : "Tag used to identify spoke VPCs.",
-      "Value" : { "Ref": "SpokeTag" } 
+      "Value" : { "Ref": "SpokeTag" }
     },
     "SpokeVPCTagValue" : {
       "Description" : "Tag valued used to idenfity spoke VPCs.",
-      "Value" : { "Ref": "SpokeTagValue" } 
+      "Value" : { "Ref": "SpokeTagValue" }
     },
     "PreferredPathTagName" : {
       "Description" : "Tag used to identify the spoke VPC preferred path.",
-      "Value" : { "Ref": "PreferredPathTag" } 
+      "Value" : { "Ref": "PreferredPathTag" }
     },
     "UUID": {
       "Description": "Newly created random UUID.",
-      "Value": { "Fn::GetAtt": [ "CreateUniqueID", "UUID" ] } 
+      "Value": { "Fn::GetAtt": [ "CreateUniqueID", "UUID" ] }
     }
   }
 }
