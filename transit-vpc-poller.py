@@ -16,12 +16,20 @@ from botocore.client import Config
 from xml.dom import minidom
 import ast
 import logging
-import datetime, sys, json, urllib2, urllib, re
+import datetime, sys, json, urllib2, urllib, re, os
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 bucket_name='%BUCKET_NAME%'
 bucket_prefix='%PREFIX%'
+
+# Function checks input region is actually a valid one. Used to determine if HUB_TAG contains a valid region
+def isValidRegion(region):
+  ec2=boto3.client('ec2',region_name='us-east-1')
+  for validRegion in ec2.describe_regions()['Regions']:
+    if validRegion['RegionName'] == region:
+      return True
+  return False
 
 #VGW tags come in the format of [{"Key": "Tag1", "Value":"Tag1value"},{"Key":"Tag2","Value":"Tag2value"}]
 #This function converts the array of Key/Value dicts to a single tag dictionary
@@ -48,7 +56,7 @@ def updateConfigXML(xml, config, vgwTags, account_id, csr_number):
 
   #Create status xml block (create = tagged to create spoke, delete = tagged as spoke, but not with the correct spoke tag value)
   newXml = xmldoc.createElement("status")
-  if vgwTags[config['HUB_TAG']] == config['HUB_TAG_VALUE']:
+  if vgwTags[config['HUB_TAG']] == config['HUB_TAG_VALUE'] or isValidRegion(vgwTags[config['HUB_TAG']]):
     newXml.appendChild(xmldoc.createTextNode("create"))
   else:
     newXml.appendChild(xmldoc.createTextNode("delete"))
@@ -142,7 +150,10 @@ def lambda_handler(event, context):
 
       #Determine if VGW is tagged as a spoke
       spoke_vgw = False
-      if vgwTags[config['HUB_TAG']] == config['HUB_TAG_VALUE']:
+      # Will grab spoke VGW in either of the two conditions (i.e. set spoke_vgw to True)
+      # 1. Value of HUB_TAG matches HUB_TAG_VALUE (original behaviour)
+      # 2. Value of HUB_TAG_VALUE matches code for the current execution region. Added to allow for mulit HUBs to exist in different regions
+      if vgwTags[config['HUB_TAG']] == config['HUB_TAG_VALUE'] or vgwTags[config['HUB_TAG']] == os.environ.get('AWS_DEFAULT_REGION'):
         spoke_vgw = True
 
       #Check to see if the VGW already has Transit VPC VPN Connections
@@ -212,8 +223,8 @@ def lambda_handler(event, context):
         processed_vgw = True
         sendAnonymousData(config, vgwTags, region_id, 2)
 
-      #Need to delete VPN connections if this is no longer a spoke VPC (tagged for spoke, but tag != spoke tag value) but Transit VPC connections exist
-      if not spoke_vgw and vpn_existing:
+      # Need to delete VPN connections if this is no longer a spoke VPC (tagged for spoke, but tag != spoke tag value OR tag != a valid region code) but Transit VPC connections exist
+      if vpn_existing and not spoke_vgw and not isValidRegion(vgwTags[config['HUB_TAG']]):
         log.info('Found old VGW (%s) with VPN connections to remove.', vgw['VpnGatewayId'])
         #We need to go through the region's VPN connections to find the ones to delete
         for vpn in vpns['VpnConnections']:
@@ -226,6 +237,12 @@ def lambda_handler(event, context):
               csrNum = '2'
             #Need to get VPN configuration to remove from CSR
             vpn_config=vpn['CustomerGatewayConfiguration']
+            ### only delete if the configuration key actually exists in bucket
+            try:
+              s3.head_object(Bucket=bucket_name, Key=bucket_prefix+'CSR'+csrNum+'/'+region_id+'-'+vpn['VpnConnectionId']+'.conf')
+            except:
+              log.info('Skipping (%s), configuration does not exist (likely belongs to different hub) (', vgw['VpnGatewayId'])
+              continue
             #Update VPN configuration XML with transit VPC specific configuration info for this connection
             vpn_config=updateConfigXML(vpn_config, config, vgwTags, account_id, vpnTags['transitvpc:endpoint'])
             s3.put_object(
