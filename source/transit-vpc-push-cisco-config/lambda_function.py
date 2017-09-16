@@ -5,7 +5,7 @@
 #  with the License. A copy of the License is located at                                                             #
 #                                                                                                                    #
 #      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #   
+#                                                                                                                    #
 #  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
 #  and limitations under the License.                                                                                #
@@ -20,10 +20,13 @@ import time
 import os
 import string
 import logging
+log_level = str(os.environ.get('LOG_LEVEL')).upper()
+if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
+    log_level = 'ERROR'
 log = logging.getLogger()
-log.setLevel(logging.INFO)
+log.setLevel(log_level)
 
-config_file='transit_vpc_config.txt'
+config_file=str(os.environ.get('CONFIG_FILE'))
 #These S3 endpoint URLs are provided to support VPC endpoints for S3 in regions such as Frankfort that require explicit region endpoint definition
 endpoint_url = {
   "us-east-1" : "https://s3.amazonaws.com",
@@ -178,16 +181,16 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
     vpn_connection_type=vpn_connection.getElementsByTagName("vpn_connection_type")[0].firstChild.data
 
     #Determine the VPN tunnels to work with
-    if vpn_status == 'create':    
+    if vpn_status == 'create':
       tunnelId=getNextTunnelId(ssh)
     else:
       tunnelId=getExistingTunnelId(ssh,vpn_connection_id)
       if tunnelId == 0:
         return
-      
+
     log.info("%s %s with tunnel #%s and #%s.",vpn_status, vpn_connection_id, tunnelId, tunnelId+1)
     # Create or delete the VRF for this connection
-    if vpn_status == 'delete':    
+    if vpn_status == 'delete':
       ipsec_tunnel = vpn_connection.getElementsByTagName("ipsec_tunnel")[0]
       customer_gateway=ipsec_tunnel.getElementsByTagName("customer_gateway")[0]
       customer_gateway_bgp_asn=customer_gateway.getElementsByTagName("bgp")[0].getElementsByTagName("asn")[0].firstChild.data
@@ -238,7 +241,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         customer_gateway_tunnel_inside_address_network_cidr=customer_gateway.getElementsByTagName("tunnel_inside_address")[0].getElementsByTagName("network_cidr")[0].firstChild.data
         customer_gateway_bgp_asn=customer_gateway.getElementsByTagName("bgp")[0].getElementsByTagName("asn")[0].firstChild.data
         customer_gateway_bgp_hold_time=customer_gateway.getElementsByTagName("bgp")[0].getElementsByTagName("hold_time")[0].firstChild.data
-        
+
         vpn_gateway=ipsec_tunnel.getElementsByTagName("vpn_gateway")[0]
         vpn_gateway_tunnel_outside_address=vpn_gateway.getElementsByTagName("tunnel_outside_address")[0].getElementsByTagName("ip_address")[0].firstChild.data
         vpn_gateway_tunnel_inside_address_ip_address=vpn_gateway.getElementsByTagName("tunnel_inside_address")[0].getElementsByTagName("ip_address")[0].firstChild.data
@@ -246,7 +249,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         vpn_gateway_tunnel_inside_address_network_cidr=vpn_gateway.getElementsByTagName("tunnel_inside_address")[0].getElementsByTagName("network_cidr")[0].firstChild.data
         vpn_gateway_bgp_asn=vpn_gateway.getElementsByTagName("bgp")[0].getElementsByTagName("asn")[0].firstChild.data
         vpn_gateway_bgp_hold_time=vpn_gateway.getElementsByTagName("bgp")[0].getElementsByTagName("hold_time")[0].firstChild.data
-        
+
         ike=ipsec_tunnel.getElementsByTagName("ike")[0]
         ike_authentication_protocol=ike.getElementsByTagName("authentication_protocol")[0].firstChild.data
         ike_encryption_protocol=ike.getElementsByTagName("encryption_protocol")[0].firstChild.data
@@ -254,7 +257,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         ike_perfect_forward_secrecy=ike.getElementsByTagName("perfect_forward_secrecy")[0].firstChild.data
         ike_mode=ike.getElementsByTagName("mode")[0].firstChild.data
         ike_pre_shared_key=ike.getElementsByTagName("pre_shared_key")[0].firstChild.data
-        
+
         ipsec=ipsec_tunnel.getElementsByTagName("ipsec")[0]
         ipsec_protocol=ipsec.getElementsByTagName("protocol")[0].firstChild.data
         ipsec_authentication_protocol=ipsec.getElementsByTagName("authentication_protocol")[0].firstChild.data
@@ -298,12 +301,13 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         config_text.append('  neighbor {} activate'.format(vpn_gateway_tunnel_inside_address_ip_address))
         config_text.append('  neighbor {} as-override'.format(vpn_gateway_tunnel_inside_address_ip_address))
         config_text.append('  neighbor {} soft-reconfiguration inbound'.format(vpn_gateway_tunnel_inside_address_ip_address))
+        config_text.append('  neighbor {} next-hop-self'.format(vpn_gateway_tunnel_inside_address_ip_address))
         config_text.append('exit')
         config_text.append('exit')
-         
+
         #Increment tunnel ID for going onto the next tunnel
         tunnelId+=1
-        
+
     log.debug("Conversion complete")
     return config_text
 

@@ -1,11 +1,11 @@
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
+#  Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
 #                                                                                                                    #
 #  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
 #  with the License. A copy of the License is located at                                                             #
 #                                                                                                                    #
 #      http://aws.amazon.com/asl/                                                                                    #
-#                                                                                                                    #   
+#                                                                                                                    #
 #  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
 #  and limitations under the License.                                                                                #
@@ -15,13 +15,18 @@ import boto3
 from botocore.client import Config
 from xml.dom import minidom
 import ast
+import os
 import logging
 import datetime, sys, json, urllib2, urllib, re
+log_level = str(os.environ.get('LOG_LEVEL')).upper()
+if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
+    log_level = 'ERROR'
 log = logging.getLogger()
-log.setLevel(logging.INFO)
+log.setLevel(log_level)
 
-bucket_name='%BUCKET_NAME%'
-bucket_prefix='%PREFIX%'
+bucket_name=str(os.environ.get('BUCKET_NAME'))
+bucket_prefix=str(os.environ.get('BUCKET_PREFIX'))
+config_file=str(os.environ.get('CONFIG_FILE'))
 
 #VGW tags come in the format of [{"Key": "Tag1", "Value":"Tag1value"},{"Key":"Tag2","Value":"Tag2value"}]
 #This function converts the array of Key/Value dicts to a single tag dictionary
@@ -68,12 +73,12 @@ def sendAnonymousData(config, vgwTags, region_id, vpn_connections):
   #Code to send anonymous data if enabled
   if config['SENDDATA'] == "Yes":
     log.debug("Sending Anonymous Data")
-    dataDict = {}    
+    dataDict = {}
     postDict = {}
     dataDict['region'] = region_id
     dataDict['vpn_connections'] = vpn_connections
     if vgwTags[config['HUB_TAG']] == config['HUB_TAG_VALUE']:
-      dataDict['status'] = "create"  
+      dataDict['status'] = "create"
     else:
       dataDict['status'] = "delete"
     dataDict['preferred_path'] = vgwTags.get(config.get('PREFERRED_PATH_TAG','none'), 'none')
@@ -99,12 +104,12 @@ def lambda_handler(event, context):
   account_id = re.findall(':(\d+):', context.invoked_function_arn)[0]
   #Retrieve Transit VPC configuration from transit_vpn_config.txt
   s3=boto3.client('s3', config=Config(signature_version='s3v4'))
-  log.info('Getting config file %s/%s%s',bucket_name, bucket_prefix, 'transit_vpc_config.txt')
-  config=ast.literal_eval(s3.get_object(Bucket=bucket_name,Key=bucket_prefix+'transit_vpc_config.txt')['Body'].read())
+  log.info('Getting config file %s/%s%s',bucket_name, bucket_prefix, config_file)
+  config=ast.literal_eval(s3.get_object(Bucket=bucket_name,Key=bucket_prefix+config_file)['Body'].read())
 
   log.info('Retrieved IP of transit VPN gateways: %s, %s',config['EIP1'], config['EIP2'])
   # use this variable to determine if a VGW has been processed so we will only process one VGW per run (one per minute)
-  processed_vgw = False 
+  processed_vgw = False
   #Get list of regions so poller can look for VGWs in all regions
   ec2=boto3.client('ec2',region_name='us-east-1')
   regions=ec2.describe_regions()
@@ -162,10 +167,10 @@ def lambda_handler(event, context):
         cg2=ec2.create_customer_gateway(Type='ipsec.1',PublicIp=config['EIP2'],BgpAsn=config['BGP_ASN'])
         ec2.create_tags(Resources=[cg2['CustomerGateway']['CustomerGatewayId']], Tags=[{'Key': 'Name','Value': 'Transit VPC Endpoint2' }])
         log.info('Created Customer Gateways: %s, %s',cg1['CustomerGateway']['CustomerGatewayId'], cg2['CustomerGateway']['CustomerGatewayId'])
-  
+
         #Create and tag first VPN connection
         vpn1=ec2.create_vpn_connection(Type='ipsec.1',CustomerGatewayId=cg1['CustomerGateway']['CustomerGatewayId'],VpnGatewayId=vgw['VpnGatewayId'],Options={'StaticRoutesOnly':False})
-        ec2.create_tags(Resources=[vpn1['VpnConnection']['VpnConnectionId']], 
+        ec2.create_tags(Resources=[vpn1['VpnConnection']['VpnConnectionId']],
             Tags=[
                 {'Key': 'Name','Value': vgw['VpnGatewayId']+'-to-Transit-VPC CSR1' },
                 {'Key': config['HUB_TAG'],'Value': config['HUB_TAG_VALUE'] },
@@ -180,7 +185,7 @@ def lambda_handler(event, context):
                 {'Key': 'transitvpc:endpoint','Value': 'CSR2' }
             ])
         log.info('Created VPN connections: %s, %s', vpn1['VpnConnection']['VpnConnectionId'], vpn2['VpnConnection']['VpnConnectionId'])
-  	
+
         #Retrieve VPN configuration
         vpn_config1=ec2.describe_vpn_connections(VpnConnectionIds=[vpn1['VpnConnection']['VpnConnectionId']])
         vpn_config1=vpn_config1['VpnConnections'][0]['CustomerGatewayConfiguration']

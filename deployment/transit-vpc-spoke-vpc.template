@@ -26,7 +26,7 @@
       "Default" : "true"
     },
     "VpcCidr" : {
-      "Description" : "CIDR block for Transit VPC.",
+      "Description" : "CIDR block for spoke VPC.",
       "Type" : "String",
       "Default" : "10.255.0.0/16"
     }
@@ -44,7 +44,7 @@
       "SpokeTagValue" : { "default" : "Transit VPC Tag Value" },
       "PreferredPathTag" : { "default" : "Preferred VPN Endpoint Tag Name" },
       "PreferredPathValue" : { "default" : "Preferred Path" },
-      "VpcCidr" : { "default" : "Transit VPC CIDR Block" }
+      "VpcCidr" : { "default" : "Spoke VPC CIDR Block" }
      }
     }
   },
@@ -62,7 +62,7 @@
     "VGW" : {
       "Type" : "AWS::EC2::VPNGateway",
       "Properties" : {
-	"Type" : "ipsec.1",
+        "Type" : "ipsec.1",
         "Tags" : [
           { "Key" : "Name", "Value" : "Spoke VPC VGW" },
           { "Key" : { "Ref" : "PreferredPathTag" }, "Value" : { "Ref" : "PreferredPathValue" }},
@@ -99,23 +99,23 @@
   "Outputs" : {
     "VPCID" : {
       "Description" : "VPC ID",
-      "Value" : { "Ref" : "SpokeVPC" } 
+      "Value" : { "Ref" : "SpokeVPC" }
     },
     "CIDR" : {
       "Description" : "VPC CIDR",
-      "Value" : { "Ref" : "VpcCidr" } 
+      "Value" : { "Ref" : "VpcCidr" }
     },
     "VGWID" : {
       "Description" : "VGW ID",
-      "Value" : { "Ref" : "VGW" } 
+      "Value" : { "Ref" : "VGW" }
     },
     "TransitVPCtags" : {
       "Description" : "Tag name/value",
-      "Value" : { "Fn::Join": [ "", [ { "Ref" : "SpokeTag" }, " = ", { "Ref": "SpokeTagValue" } ] ] } 
+      "Value" : { "Fn::Join": [ "", [ { "Ref" : "SpokeTag" }, " = ", { "Ref": "SpokeTagValue" } ] ] }
     },
     "TransitVPCPath" : {
       "Description" : "Tag name/value",
-      "Value" : { "Fn::Join": [ "", [ { "Ref" : "PreferredPathTag" }, " = ", { "Ref": "PreferredPathValue" } ] ] } 
+      "Value" : { "Fn::Join": [ "", [ { "Ref" : "PreferredPathTag" }, " = ", { "Ref": "PreferredPathValue" } ] ] }
     }
   }
 }

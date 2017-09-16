@@ -1,23 +1,38 @@
-# aws-transit-vpc
-Source code for the AWS solution "Transit Network VPC (Cisco CSR). Please see the main solution for the [AWS Transit VPC](https://aws.amazon.com/answers/transit-vpc/). 
+# AWS Transit VPC
+A solution for creating a transit VPC with Cisco CSR instances. These templates rely on the following AWS Marketplace listings:
+BYOL
+https://aws.amazon.com/marketplace/pp/B00NF48FI2
 
+License Included
+https://aws.amazon.com/marketplace/pp/B00OCG4OAA
 
-## Cloudformation templates
+## OS/Python Environment Setup
+```bash
+sudo yum-config-manager --enable epel
+sudo yum update -y
+sudo pip install --upgrade pip
+alias sudo='sudo env PATH=$PATH'
+sudo pip install --upgrade setuptools
+sudo pip install --upgrade virtualenv
+```
 
-- transit-vpc-primary-account.template
-- transit-vpc-second-account.template
-- transit-vpc-spoke-vpc.template
-- transit-vpc-spoke-vpc-withec2.template
-- transit-vpc-spoke-vpc-withec2-tsunamiudp.template
+## Building Lambda Package
+```bash
+cd deployment
+./build-s3-dist.sh source-bucket-base-name
+```
+source-bucket-base-name should be the base name for the S3 bucket location where the template will source the Lambda code from.
+The template will append '-[region_name]' to this value.
+For example: ./build-s3-dist.sh solutions
+The template will then expect the source code to be located in the solutions-[region_name] bucket
 
-## Lambda source code
+## CF template and Lambda function
+Located in deployment/dist
 
-- transit-vpc-poller.py
-- transit-vpc-push-cisco-config.py
 
 ***
 
-Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
 
