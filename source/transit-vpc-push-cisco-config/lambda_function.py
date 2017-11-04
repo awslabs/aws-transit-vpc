@@ -19,6 +19,7 @@ import ast
 import time
 import os
 import string
+import re
 import logging
 log_level = str(os.environ.get('LOG_LEVEL')).upper()
 if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
@@ -26,6 +27,8 @@ if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
 log = logging.getLogger()
 log.setLevel(log_level)
 
+bucket_name=str(os.environ.get('BUCKET_NAME'))
+bucket_prefix=str(os.environ.get('BUCKET_PREFIX'))
 config_file=str(os.environ.get('CONFIG_FILE'))
 #These S3 endpoint URLs are provided to support VPC endpoints for S3 in regions such as Frankfort that require explicit region endpoint definition
 endpoint_url = {
@@ -54,9 +57,9 @@ def prompt(chan):
         #log.debug("%s",resp)
     return buff
 
-# Logic to figure out the next availble tunnel
-def getNextTunnelId(ssh):
-    log.debug('Start getNextTunnelId')
+#Logic to populate a list of existing tunnel IDs
+def getExistingTunnels(ssh):
+    log.debug('Start getExistingTunnels')
     ssh.send('term len 0\n')
     log.debug("%s",prompt(ssh))
     ssh.send('config t\n')
@@ -66,20 +69,27 @@ def getNextTunnelId(ssh):
     log.debug("%s",output)
     ssh.send('exit\n')
     log.debug("%s",prompt(ssh))
-    lastTunnelNum=''
+    tunnels = []
     for line in output.split('\n'):
         line=line.replace('* Tunnel','Tunnel')
         log.debug("%s",line)
         if line.strip()[:6] == 'Tunnel':
-            lastTunnelNum = line.strip().partition(' ')[0].replace('Tunnel','')
+            tunnelNum = line.strip().partition(' ')[0].replace('Tunnel','')
+            tunnels.append(int(tunnelNum))
+    return tunnels
 
-    if lastTunnelNum == '':
-        return 1
-    return int(lastTunnelNum) + 1
+# Logic to figure out the next available tunnel IDs
+def getNextTunnelIds(existing_tunnels):
+    if existing_tunnels:
+        maxTunnelId = int(max(existing_tunnels))
+        nextTunnelIds = [ maxTunnelId + 1, maxTunnelId + 2 ]
+    else:
+        nextTunnelIds = [ 1, 2 ]
+    return nextTunnelIds
 
-# Logic to figure out existing tunnel IDs
-def getExistingTunnelId(ssh,vpn_connection_id):
-    log.debug('Start getExistingTunnelId')
+# Logic to figure out existing tunnel IDs for a given VPN connection
+def getVPNTunnelIds(ssh,vpn_connection_id):
+    log.debug('Start getVPNTunnelIds')
     ssh.send('term len 0\n')
     log.debug("%s",prompt(ssh))
     #ssh.send('config t\n')
@@ -88,19 +98,18 @@ def getExistingTunnelId(ssh,vpn_connection_id):
     ssh.send('show run | include crypto keyring\n')
     output = prompt(ssh)
     log.debug("%s",output)
-    tunnelNum=0
     #Now parse crypto keyring lines for keyring-vpn-connection_id-tunnelId
+    matchingTunnels = []
     for line in output.split('\n'):
       if vpn_connection_id in line:
-        tmpNum = int(line.split('-')[-1])
-        if tunnelNum < tmpNum:
-          tunnelNum = tmpNum
-
-    if tunnelNum == 0:
+        tunnelNum = int(line.split('-')[-1])
+        log.debug("Matched VPN %s to tunnel %s", vpn_connection_id, tunnelNum)
+        matchingTunnels.append(tunnelNum)
+    matchingTunnels.sort()
+    if not matchingTunnels:
       log.error('Unable to find existing tunnels for %s', vpn_connection_id)
-      return 0
-    #Parsing logic gets the greater of the two tunnel numbers, so return tunnelNum -1 to get the first tunnel number
-    return tunnelNum-1
+    #Return a sorted list of tunnels - the lower two tunnels are more likely correct
+    return matchingTunnels;
 
 #Generic logic to push pre-generated Cisco config to the router
 def pushConfig(ssh,config):
@@ -157,7 +166,7 @@ def downloadPrivateKey(bucket_name, bucket_prefix, s3_url, prikey):
     s3.download_file(bucket_name,bucket_prefix+prikey, '/tmp/'+prikey)
 
 #Logic to create the appropriate Cisco configuration
-def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
+def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh, existing_tunnels):
     log.info("Processing %s/%s", bucket_name, bucket_key)
 
     #Download the VPN configuration XML document
@@ -181,14 +190,22 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
     vpn_connection_type=vpn_connection.getElementsByTagName("vpn_connection_type")[0].firstChild.data
 
     #Determine the VPN tunnels to work with
-    if vpn_status == 'create':
-      tunnelId=getNextTunnelId(ssh)
-    else:
-      tunnelId=getExistingTunnelId(ssh,vpn_connection_id)
-      if tunnelId == 0:
-        return
+    tunnelIds=getVPNTunnelIds(ssh,vpn_connection_id)
+    if vpn_status != 'delete':
+      if tunnelIds:
+        vpn_status = 'update'
+        #We could have duplicates from previous lambda - slice the first two
+        if len(tunnelIds) > 2:
+          log.warning('Multiple crypto/tunnel pairs defined for %s %s, invalid tunnels/crypto should be removed', vpn_connection_id, tunnelIds)
+          tunnelIds = tunnelIds[:2]
+      else:
+        tunnelIds=getNextTunnelIds(existing_tunnels)
 
-    log.info("%s %s with tunnel #%s and #%s.",vpn_status, vpn_connection_id, tunnelId, tunnelId+1)
+    #If we still have no tunnelIds, we're trying to delete something that's already gone - take no action on the router
+    if not tunnelIds:
+      return { 'status':vpn_status, 'tunnelids':[ 0, 0 ], 'text':[] }
+
+    log.info("%s %s with tunnel #%s and #%s.",vpn_status, vpn_connection_id, tunnelIds[0], tunnelIds[1])
     # Create or delete the VRF for this connection
     if vpn_status == 'delete':
       ipsec_tunnel = vpn_connection.getElementsByTagName("ipsec_tunnel")[0]
@@ -199,26 +216,23 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
       config_text.append('  no address-family ipv4 vrf {}'.format(vpn_connection_id))
       config_text.append('exit')
       config_text.append('no ip vrf {}'.format(vpn_connection_id))
-      config_text.append('interface Tunnel{}'.format(tunnelId))
-      config_text.append('  shutdown')
-      config_text.append('exit')
-      config_text.append('no interface Tunnel{}'.format(tunnelId))
-      config_text.append('interface Tunnel{}'.format(tunnelId+1))
-      config_text.append('  shutdown')
-      config_text.append('exit')
-      config_text.append('no interface Tunnel{}'.format(tunnelId+1))
+      #Loop all tunnels to handle duplicates
+      for tunnelId in tunnelIds:
+        config_text.append('interface Tunnel{}'.format(tunnelId))
+        config_text.append('  shutdown')
+        config_text.append('exit')
+        config_text.append('no interface Tunnel{}'.format(tunnelId))
       config_text.append('no route-map rm-{} permit'.format(vpn_connection_id))
       # Cisco requires waiting 60 seconds before removing the isakmp profile
       config_text.append('WAIT')
       config_text.append('WAIT')
-      config_text.append('no crypto isakmp profile isakmp-{}-{}'.format(vpn_connection_id,tunnelId))
-      config_text.append('no crypto isakmp profile isakmp-{}-{}'.format(vpn_connection_id,tunnelId+1))
-      config_text.append('no crypto keyring keyring-{}-{}'.format(vpn_connection_id,tunnelId))
-      config_text.append('no crypto keyring keyring-{}-{}'.format(vpn_connection_id,tunnelId+1))
+      for tunnelId in tunnelIds:
+        config_text.append('no crypto isakmp profile isakmp-{}-{}'.format(vpn_connection_id,tunnelId))
+        config_text.append('no crypto keyring keyring-{}-{}'.format(vpn_connection_id,tunnelId))
     else:
       # Create global tunnel configuration
       config_text = ['ip vrf {}'.format(vpn_connection_id)]
-      config_text.append(' rd {}:{}'.format(bgp_asn, tunnelId))
+      config_text.append(' rd {}:{}'.format(bgp_asn, tunnelIds[0]))
       config_text.append(' route-target export {}:0'.format(bgp_asn))
       config_text.append(' route-target import {}:0'.format(bgp_asn))
       config_text.append('exit')
@@ -233,7 +247,9 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         config_text.append('exit')
 
       # Create tunnel specific configuration
+      tunnelIndex=0
       for ipsec_tunnel in vpn_connection.getElementsByTagName("ipsec_tunnel"):
+        tunnelId=tunnelIds[tunnelIndex]
         customer_gateway=ipsec_tunnel.getElementsByTagName("customer_gateway")[0]
         customer_gateway_tunnel_outside_address=customer_gateway.getElementsByTagName("tunnel_outside_address")[0].getElementsByTagName("ip_address")[0].firstChild.data
         customer_gateway_tunnel_inside_address_ip_address=customer_gateway.getElementsByTagName("tunnel_inside_address")[0].getElementsByTagName("ip_address")[0].firstChild.data
@@ -306,27 +322,13 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         config_text.append('exit')
 
         #Increment tunnel ID for going onto the next tunnel
-        tunnelId+=1
+        tunnelIndex+=1
 
     log.debug("Conversion complete")
-    return config_text
+    return { 'status':vpn_status, 'tunnelids': tunnelIds, 'text':config_text }
 
-def lambda_handler(event, context):
-    record=event['Records'][0]
-    bucket_name=record['s3']['bucket']['name']
-    bucket_key=record['s3']['object']['key']
-    bucket_region=record['awsRegion']
-    bucket_prefix=getBucketPrefix(bucket_name, bucket_key)
-    log.debug("Getting config")
-    stime = time.time()
-    config = getTransitConfig(bucket_name, bucket_prefix, endpoint_url[bucket_region], config_file)
-    if 'CSR1' in bucket_key:
-        csr_ip=config['PIP1']
-        csr_name='CSR1'
-    else:
-        csr_ip=config['PIP2']
-        csr_name='CSR2'
-    log.info("--- %s seconds ---", (time.time() - stime))
+#Connect to a CSR router using credentials from config
+def connect_router_ssh(config, csr_name, csr_ip, bucket_region, bucket_name, bucket_prefix):
     #Download private key file from secure S3 bucket
     downloadPrivateKey(bucket_name, bucket_prefix, endpoint_url[bucket_region], config['PRIVATE_KEY'])
     log.debug("Reading downloaded private key into memory.")
@@ -341,7 +343,7 @@ def lambda_handler(event, context):
     log.info("Connecting to %s (%s)", csr_name, csr_ip)
     stime = time.time()
     try:
-      c.connect( hostname = csr_ip, username = config['USER_NAME'], pkey = k )
+      c.connect( hostname = csr_ip, username = config['USER_NAME'], pkey = k, timeout = 20 )
       PubKeyAuth=True
     except paramiko.ssh_exception.AuthenticationException:
       log.error("PubKey Authentication Failed! Connecting with password")
@@ -351,15 +353,117 @@ def lambda_handler(event, context):
     log.debug("Connected to %s",csr_ip)
     ssh = c.invoke_shell()
     log.debug("%s",prompt(ssh))
-    log.debug("Creating config.")
+
+    ssh.keep_this = c
+    return ssh
+
+#Push one or more VPN configuration files to a CSR router
+def push_router_configs(ssh, config, bucket_region, bucket_name, bucket_keys):
+    log.info("Creating config.")
     stime = time.time()
-    csr_config = create_cisco_config(bucket_name, bucket_key, endpoint_url[bucket_region], config['BGP_ASN'], ssh)
+    csr_config = []
+    #Reset the existing tunnel list each time - each CSR could have mismatched tunnel IDs
+    existing_tunnels = getExistingTunnels(ssh)
+    disable_bucket_keys = []
+    #Accumulate config snippets to apply in one session
+    for bucket_key in bucket_keys:
+        result = create_cisco_config(bucket_name, bucket_key, endpoint_url[bucket_region], config['BGP_ASN'], ssh, existing_tunnels)
+        if result['text']:
+            csr_config += result['text']
+        if result['status'] == 'delete':
+            #Queue tunnel for config delete in S3 if we removed it from the CSR
+            disable_bucket_keys.append(bucket_key)
+        elif result['status'] == 'create':
+            #Mark this tunnel ID as unavailable
+            existing_tunnels.extend(result['tunnelids'])
     log.info("--- %s seconds ---", (time.time() - stime))
     log.info("Pushing config to router.")
     stime = time.time()
     pushConfig(ssh,csr_config)
     log.info("--- %s seconds ---", (time.time() - stime))
     ssh.close()
+    #If any tunnels were removed, disable the VPN connection config files
+    if disable_bucket_keys:
+        s3=boto3.client('s3',endpoint_url=endpoint_url[bucket_region],
+          config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
+        for bucket_key in disable_bucket_keys:
+            log.info("Disabling defunct VPN config %s", bucket_key)
+            #Rename the existing file by appending .disabled, so the S3 Put event won't match
+            copy_source = "%s/%s" % (bucket_name, bucket_key)
+            s3.copy_object(
+              Bucket=bucket_name,
+              Key=bucket_key+'.disabled',
+              CopySource=copy_source,
+              ACL='bucket-owner-full-control',
+              ServerSideEncryption='aws:kms',
+              SSEKMSKeyId=config['KMS_KEY']
+            )
+            #Delete the original
+            s3.delete_object(Bucket=bucket_name, Key=bucket_key)
+
+#Handler for S3 events - update a single VPN
+def handle_event_s3(event, context):
+    record=event['Records'][0]
+    bucket_name=record['s3']['bucket']['name']
+    bucket_key=record['s3']['object']['key']
+    bucket_region=record['awsRegion']
+    bucket_prefix=getBucketPrefix(bucket_name, bucket_key)
+    log.info("Getting config")
+    stime = time.time()
+    config = getTransitConfig(bucket_name, bucket_prefix, endpoint_url[bucket_region], config_file)
+    if 'CSR1' in bucket_key:
+        csr_ip=config['PIP1']
+        csr_name='CSR1'
+    else:
+        csr_ip=config['PIP2']
+        csr_name='CSR2'
+    log.info("--- %s seconds ---", (time.time() - stime))
+    ssh = connect_router_ssh(config, csr_name, csr_ip, bucket_region, bucket_name, bucket_prefix)
+    push_router_configs(ssh, config, bucket_region, bucket_name, [bucket_key])
+
+#Handler for scheduled events - reconcile all VPNs
+def handle_event_scheduled(event, context):
+    s3=boto3.client('s3')
+    bucket_region=s3.get_bucket_location(Bucket=bucket_name)['LocationConstraint']
+    #null value for LocationConstraint means us-east-1
+    if not bucket_region:
+        bucket_region='us-east-1'
+    log.info("Getting config")
+    stime = time.time()
+    config = getTransitConfig(bucket_name, bucket_prefix, endpoint_url[bucket_region], config_file)
+    log.info("--- %s seconds ---", (time.time() - stime))
+    for csrNum in ['1', '2'] :
+        stime = time.time()
+        log.info("Getting VPN configs for CSR%s", csrNum)
+        csr_ip=config['PIP'+csrNum]
+        csr_name='CSR'+csrNum
+        csr_config_prefix=bucket_prefix+'CSR'+csrNum+'/'
+        vpn_configs = s3.list_objects_v2(
+              Bucket=bucket_name,
+              Prefix=csr_config_prefix
+        )
+        bucket_keys = []
+        #Get all active VPN configs
+        if 'Contents' in vpn_configs:
+          for vpn_config in vpn_configs['Contents']:
+            if re.search(r'(?P<ID>vpn-.+)\.conf$', vpn_config['Key']):
+              vpn_connection_id=vpn_config['Key'][len(csr_config_prefix):-5]
+              log.debug("Adding configs from %s", vpn_config['Key'])
+              bucket_keys.append(vpn_config['Key'])
+        log.info("--- %s seconds ---", (time.time() - stime))
+        ssh = connect_router_ssh(config, csr_name, csr_ip, bucket_region, bucket_name, bucket_prefix)
+        push_router_configs(ssh, config, bucket_region, bucket_name, bucket_keys)
+
+
+def lambda_handler(event, context):
+    if 'Records' in event and 'eventSource' in event['Records'][0] and event['Records'][0]['eventSource'] == 'aws:s3':
+        log.info('Invoked via S3')
+        handle_event_s3(event, context)
+    elif 'detail-type' in event and event['detail-type'] == 'Scheduled Event':
+        log.info('Invoked via schedule')
+        handle_event_scheduled(event, context)
+    else:
+        log.error("Unhandled event:\n%s", event)
 
     return
     {

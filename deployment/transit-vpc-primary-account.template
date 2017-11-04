@@ -635,8 +635,21 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
+                    "s3:GetBucketLocation",
+                    "s3:ListBucket",
+                    "s3:HeadBucket"
+                  ],
+                  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" } ]] }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "s3:PutObject",
-                    "s3:GetObject"
+                    "s3:GetObject",
+                    "s3:CopyObject",
+                    "s3:DeleteObject",
+                    "s3:ListObjects",
+                    "s3:ListObjectsV2"
 		  ],
 		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" }, "/", {"Ref": "S3Prefix"}, "*" ]] }
 		}
@@ -667,6 +680,8 @@
        },
        "Environment": {
          "Variables": {
+           "BUCKET_NAME": { "Ref" : "VPNConfigS3Bucket" },
+           "BUCKET_PREFIX": { "Ref" : "S3Prefix" },
            "CONFIG_FILE": "transit_vpc_config.txt",
            "LOG_LEVEL":"INFO"
          }
@@ -697,6 +712,27 @@
                "} ] }",
 		     "}"
        ]] }
+     }
+   },
+   "CiscoConfigScheduleEvent": {
+     "Type": "AWS::Events::Rule",
+     "Properties": {
+       "Description": "Transit VPC: Rule to trigger Cisco Configurator to reconcile CSR against VPN config files in S3.",
+       "ScheduleExpression": "cron(0 0/6 * * ? *)",
+       "State": "ENABLED",
+       "Targets": [ {
+         "Id": { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" },"CiscoConfig-6hour" ]] },
+         "Arn": { "Fn::GetAtt": [ "CiscoConfigFunction", "Arn" ] }
+       } ]
+     }
+   },
+   "PermissionForCiscoConfigScheduleEvent": {
+     "Type": "AWS::Lambda::Permission",
+     "Properties": {
+       "FunctionName": { "Ref": "CiscoConfigFunction" },
+       "Action": "lambda:InvokeFunction",
+       "Principal": "events.amazonaws.com",
+       "SourceArn": { "Fn::GetAtt": ["CiscoConfigScheduleEvent", "Arn"] }
      }
    },
    "TransitVpcS3Config": {
@@ -776,9 +812,18 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
+                    "s3:ListBucket"
+                  ],
+                  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" } ]] }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "s3:PutObject",
                     "s3:PutObjectAcl",
-                    "s3:GetObject"
+                    "s3:GetObject",
+                    "s3:ListObjects",
+                    "s3:ListObjectsV2"
 		  ],
 		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" }, "/", {"Ref": "S3Prefix"}, "*" 	]] }
 		}
