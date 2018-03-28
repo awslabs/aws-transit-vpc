@@ -1,121 +1,116 @@
 {
-  "AWSTemplateFormatVersion" : "2010-09-09",
+  "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description" : "(SO0001s) - Transit VPC spoke: Creates a spoke VPC for TransitVPC testing.",
+  "Description": "(SO0001s) - Transit VPC spoke: Creates a spoke VPC for TransitVPC testing.",
 
-  "Parameters" : {
-    "PreferredPathTag" : {
-      "Description" : "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
-      "Type" : "String",
-      "Default" : "transitvpc:preferred-path"
+  "Parameters": {
+    "PreferredPathTag": {
+      "Description": "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
+      "Type": "String",
+      "Default": "transitvpc:preferred-path"
     },
-    "PreferredPathValue" : {
-      "Description" : "Specify if there is a preferred CSR to control the traffic flow through the Transit VPC (e.g. when integrating with stateful on-prem firewalls).",
-      "Type" : "String",
-      "Default" : "none",
-      "AllowedValues" : [ "none", "CSR1", "CSR2" ]
+    "PreferredPathValue": {
+      "Description": "Specify if there is a preferred CSR to control the traffic flow through the Transit VPC (e.g. when integrating with stateful on-prem firewalls).",
+      "Type": "String",
+      "Default": "none",
+      "AllowedValues": ["none", "CSR1", "CSR2"]
     },
-    "SpokeTag" : {
-      "Description" : "Tag to use to identify spoke VPCs to connect to Transit VPC.",
-      "Type" : "String",
-      "Default" : "transitvpc:spoke"
+    "SpokeTag": {
+      "Description": "Tag to use to identify spoke VPCs to connect to Transit VPC.",
+      "Type": "String",
+      "Default": "transitvpc:spoke"
     },
-    "SpokeTagValue" : {
-      "Description" : "Tag value to use to identify spoke VPCs to connect to Transit VPC.",
-      "Type" : "String",
-      "Default" : "true"
+    "SpokeTagValue": {
+      "Description": "Tag value to use to identify spoke VPCs to connect to Transit VPC.",
+      "Type": "String",
+      "Default": "true"
     },
-    "VpcCidr" : {
-      "Description" : "CIDR block for spoke VPC.",
-      "Type" : "String",
-      "Default" : "10.255.0.0/16"
+    "VpcCidr": {
+      "Description": "CIDR block for spoke VPC.",
+      "Type": "String",
+      "Default": "10.255.0.0/16"
     }
   },
-  "Metadata" : {
-    "AWS::CloudFormation::Interface" : {
-     "ParameterGroups" : [
-      {
-        "Label" : { "default" : "Network Configuration" },
-        "Parameters" : [ "VpcCidr", "SpokeTag","SpokeTagValue", "PreferredPathTag", "PreferredPathValue" ]
-      }
-     ],
-     "ParameterLabels" : {
-      "SpokeTag" : { "default" : "Transit VPC Tag Name" },
-      "SpokeTagValue" : { "default" : "Transit VPC Tag Value" },
-      "PreferredPathTag" : { "default" : "Preferred VPN Endpoint Tag Name" },
-      "PreferredPathValue" : { "default" : "Preferred Path" },
-      "VpcCidr" : { "default" : "Spoke VPC CIDR Block" }
-     }
-    }
-  },
-
-  "Resources" : {
-    "SpokeVPC" : {
-      "Type" : "AWS::EC2::VPC",
-      "Properties" : {
-        "CidrBlock" : { "Ref" : "VpcCidr" },
-        "Tags" : [
-          { "Key" : "Name", "Value" : "Spoke VPC" }
-        ]
-      }
-    },
-    "VGW" : {
-      "Type" : "AWS::EC2::VPNGateway",
-      "Properties" : {
-        "Type" : "ipsec.1",
-        "Tags" : [
-          { "Key" : "Name", "Value" : "Spoke VPC VGW" },
-          { "Key" : { "Ref" : "PreferredPathTag" }, "Value" : { "Ref" : "PreferredPathValue" }},
-          { "Key" : { "Ref" : "SpokeTag" }, "Value" : { "Ref" : "SpokeTagValue" }}
-        ]
-      }
-    },
-    "AttachVGWToVPC" : {
-       "Type" : "AWS::EC2::VPCGatewayAttachment",
-       "Properties" : {
-         "VpcId" : { "Ref" : "SpokeVPC" },
-         "VpnGatewayId" : { "Ref" : "VGW" }
-       }
-    },
-    "VPCRouteTable" : {
-      "Type" : "AWS::EC2::RouteTable",
-      "Properties" : {
-        "VpcId" : { "Ref" : "SpokeVPC" },
-        "Tags" : [
-          { "Key" : "Network", "Value" : "Public" },
-          { "Key" : "Name", "Value" : "Spoke VPC" }
-        ]
-      }
-    },
-    "ProgagateRoute" : {
-     "DependsOn" : "AttachVGWToVPC",
-      "Type" : "AWS::EC2::VPNGatewayRoutePropagation",
-      "Properties" : {
-        "RouteTableIds" : [ { "Ref" : "VPCRouteTable" } ],
-        "VpnGatewayId" : { "Ref" : "VGW" }
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [{
+        "Label": {"default": "Network Configuration"},
+        "Parameters": ["VpcCidr", "SpokeTag","SpokeTagValue", "PreferredPathTag", "PreferredPathValue"]
+      }],
+      "ParameterLabels": {
+        "SpokeTag": {"default": "Transit VPC Tag Name"},
+        "SpokeTagValue": {"default": "Transit VPC Tag Value"},
+        "PreferredPathTag": {"default": "Preferred VPN Endpoint Tag Name"},
+        "PreferredPathValue": {"default": "Preferred Path"},
+        "VpcCidr": {"default": "Spoke VPC CIDR Block"}
       }
     }
   },
-  "Outputs" : {
-    "VPCID" : {
-      "Description" : "VPC ID",
-      "Value" : { "Ref" : "SpokeVPC" }
+  "Resources": {
+    "SpokeVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {"Ref": "VpcCidr"},
+        "Tags": [{"Key": "Name", "Value": "Spoke VPC"}]
+      }
     },
-    "CIDR" : {
-      "Description" : "VPC CIDR",
-      "Value" : { "Ref" : "VpcCidr" }
+    "VGW": {
+      "Type": "AWS::EC2::VPNGateway",
+      "Properties": {
+        "Type": "ipsec.1",
+        "Tags": [
+          {"Key": "Name", "Value": "Spoke VPC VGW"},
+          {"Key": {"Ref": "PreferredPathTag"}, "Value": {"Ref": "PreferredPathValue"}},
+          {"Key": {"Ref": "SpokeTag"}, "Value": {"Ref": "SpokeTagValue"}}
+        ]
+      }
     },
-    "VGWID" : {
-      "Description" : "VGW ID",
-      "Value" : { "Ref" : "VGW" }
+    "AttachVGWToVPC": {
+       "Type": "AWS::EC2::VPCGatewayAttachment",
+       "Properties": {
+          "VpcId": {"Ref": "SpokeVPC"},
+          "VpnGatewayId": {"Ref": "VGW"}
+        }
     },
-    "TransitVPCtags" : {
-      "Description" : "Tag name/value",
-      "Value" : { "Fn::Join": [ "", [ { "Ref" : "SpokeTag" }, " = ", { "Ref": "SpokeTagValue" } ] ] }
+    "VPCRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {"Ref": "SpokeVPC"},
+        "Tags": [
+          {"Key": "Network", "Value": "Public"},
+          {"Key": "Name", "Value": "Spoke VPC"}
+        ]
+      }
     },
-    "TransitVPCPath" : {
-      "Description" : "Tag name/value",
-      "Value" : { "Fn::Join": [ "", [ { "Ref" : "PreferredPathTag" }, " = ", { "Ref": "PreferredPathValue" } ] ] }
+    "ProgagateRoute": {
+     "DependsOn": "AttachVGWToVPC",
+      "Type": "AWS::EC2::VPNGatewayRoutePropagation",
+      "Properties": {
+        "RouteTableIds": [{"Ref": "VPCRouteTable"}],
+        "VpnGatewayId": {"Ref": "VGW"}
+      }
+    }
+  },
+  "Outputs": {
+    "VPCID": {
+      "Description": "VPC ID",
+      "Value": {"Ref": "SpokeVPC"}
+    },
+    "CIDR": {
+      "Description": "VPC CIDR",
+      "Value": {"Ref": "VpcCidr"}
+    },
+    "VGWID": {
+      "Description": "VGW ID",
+      "Value": {"Ref": "VGW"}
+    },
+    "TransitVPCtags": {
+      "Description": "Tag name/value",
+      "Value": {"Fn::Join": ["", [{"Ref": "SpokeTag"}, " = ", {"Ref": "SpokeTagValue"}] ]}
+    },
+    "TransitVPCPath": {
+      "Description": "Tag name/value",
+      "Value": {"Fn::Join": ["", [{"Ref": "PreferredPathTag"}, " = ", {"Ref": "PreferredPathValue"}] ]}
     }
   }
 }
