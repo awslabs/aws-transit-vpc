@@ -18,7 +18,7 @@
     "Function" : {
       "Poller" : {
         "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/latest/transit-vpc-poller.zip",
+          "S3Key" : "transit-vpc/latest/transit-vpc-poller.zip",
         "Name" : "vgw-poller",
         "Handler": "transit-vpc-poller.lambda_handler",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
@@ -47,28 +47,28 @@
             "PolicyName": "My_Lambda_Function_Permissions",
             "PolicyDocument": {
               "Version" : "2012-10-17",
-	      "Statement": [
-		{
-		  "Effect": "Allow",
-		  "Action": [
-		    "logs:CreateLogGroup",
-		    "logs:CreateLogStream",
-		    "logs:PutLogEvents"
-		  ],
-		  "Resource": { "Fn::Join" : ["", ["arn:aws:logs:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":log-group:/aws/lambda/*" ]]}
-		},
-		{
-		  "Effect": "Allow",
-		  "Action": [
+          "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+          ],
+          "Resource": { "Fn::Join" : ["", ["arn:aws:logs:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":log-group:/aws/lambda/*" ]]}
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
                     "ec2:Describe*",
                     "ec2:CreateTags",
                     "ec2:CreateCustomerGateway",
                     "ec2:DeleteCustomerGateway",
                     "ec2:CreateVpnConnection",
                     "ec2:DeleteVpnConnection"
-		  ],
-		  "Resource": "*"
-	        },
+          ],
+          "Resource": "*"
+            },
                 {
                   "Effect": "Allow",
                   "Action": [
@@ -78,16 +78,16 @@
                   ],
                   "Resource": "*"
                 },
-		{
-		  "Effect": "Allow",
-		  "Action": [
+        {
+          "Effect": "Allow",
+          "Action": [
                     "s3:PutObject",
                     "s3:PutObjectAcl",
                     "s3:GetObject"
-		  ],
-		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "BucketName" }, "/", {"Ref": "BucketPrefix"}, "*" 	]] }
-	       }
-	     ]
+          ],
+          "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "BucketName" }, "/", {"Ref": "BucketPrefix"}, "*"     ]] }
+           }
+         ]
           }
         } ]
       }
@@ -98,7 +98,7 @@
       ],
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "FunctionName" : { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" }, { "Fn::FindInMap" : [ "Function", "Poller", "Name"]}	]] },
+        "FunctionName" : { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" }, { "Fn::FindInMap" : [ "Function", "Poller", "Name"]}    ]] },
         "Code": {
           "S3Bucket": { "Fn::Join": ["", [ { "Fn::FindInMap" : [ "Function", "Poller", "S3Bucket"]}, "-", {"Ref": "AWS::Region"} ]] },
           "S3Key": { "Fn::FindInMap" : [ "Function", "Poller", "S3Key"]}
@@ -144,7 +144,7 @@
   "Outputs" : {
    "PollerFunction" : {
      "Description" : "New Lambda function name.",
-     "Value" : { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" }, { "Fn::FindInMap" : [ "Function", "Poller", "Name"]}	]] }
+     "Value" : { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" }, { "Fn::FindInMap" : [ "Function", "Poller", "Name"]}    ]] }
    },
    "PollerFunctionARN" : {
      "Description" : "ARN for new Lambda function.",

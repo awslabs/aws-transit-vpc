@@ -183,7 +183,7 @@
     "VGW" : {
       "Type" : "AWS::EC2::VPNGateway",
       "Properties" : {
-	"Type" : "ipsec.1",
+    "Type" : "ipsec.1",
         "Tags" : [
           { "Key" : "Name", "Value" : "Spoke VPC VGW" },
           { "Key" : { "Ref" : "PreferredPathTag" }, "Value" : { "Ref" : "PreferredPathValue" }},
@@ -234,18 +234,18 @@
                           { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" }, "Arch" ] } ] },
         "InstanceType" : { "Ref" : "InstanceType" },
         "SubnetId" : { "Ref" : "VPCPubSub" },
-		"SecurityGroupIds" : [{ "Ref" : "InstanceSecurityGroup" }],
+        "SecurityGroupIds" : [{ "Ref" : "InstanceSecurityGroup" }],
         "KeyName" : { "Ref" : "KeyName" },
-		"BlockDeviceMappings" : [
-		   {
-		      "DeviceName"  : "/dev/sdc",
-		      "VirtualName" : "ephemeral0"
-		   },
-		   {
-		      "DeviceName"  : "/dev/sdd",
-		      "VirtualName" : "ephemeral1"
-		   }
-		],
+        "BlockDeviceMappings" : [
+           {
+              "DeviceName"  : "/dev/sdc",
+              "VirtualName" : "ephemeral0"
+           },
+           {
+              "DeviceName"  : "/dev/sdd",
+              "VirtualName" : "ephemeral1"
+           }
+        ],
         "UserData": {
             "Fn::Base64": {
                 "Fn::Join": [
@@ -284,13 +284,13 @@
           "ToPort" : "22",
           "CidrIp" : "0.0.0.0/0"
         },
-		{
+        {
           "IpProtocol" : "tcp",
           "FromPort" : "46224",
           "ToPort" : "46224",
           "CidrIp" : "10.0.0.0/8"
         },
-		{
+        {
           "IpProtocol" : "udp",
           "FromPort" : "46224",
           "ToPort" : "46224",
@@ -303,7 +303,7 @@
       "Type" : "AWS::EC2::EIP",
       "Properties" : {
         "Domain" : "vpc",
-	"InstanceId" : { "Ref" : "EC2Instance" }
+    "InstanceId" : { "Ref" : "EC2Instance" }
       }
     }
 

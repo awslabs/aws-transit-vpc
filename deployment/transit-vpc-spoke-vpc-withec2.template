@@ -141,7 +141,7 @@
     "VGW" : {
       "Type" : "AWS::EC2::VPNGateway",
       "Properties" : {
-	"Type" : "ipsec.1",
+    "Type" : "ipsec.1",
         "Tags" : [
           { "Key" : "Name", "Value" : { "Fn::Join": ["", [ { "Ref" : "AWS::StackName" }, " VGW"]] } },
           { "Key" : { "Ref" : "PreferredPathTag" }, "Value" : { "Ref" : "PreferredPathValue" }},
@@ -194,7 +194,7 @@
           { "Key" : "Name", "Value" : { "Fn::Join": ["", [ { "Ref" : "AWS::StackName" }, " - ", "Test Instance"]] } }
         ],
         "SubnetId" : { "Ref" : "VPCPubSub" },
-		"SecurityGroupIds" : [{ "Ref" : "InstanceSecurityGroup" }],
+        "SecurityGroupIds" : [{ "Ref" : "InstanceSecurityGroup" }],
         "KeyName" : { "Ref" : "KeyName" }
         }
     },
@@ -222,7 +222,7 @@
       "Type" : "AWS::EC2::EIP",
       "Properties" : {
         "Domain" : "vpc",
-	"InstanceId" : { "Ref" : "EC2Instance" }
+    "InstanceId" : { "Ref" : "EC2Instance" }
       }
     }
 
