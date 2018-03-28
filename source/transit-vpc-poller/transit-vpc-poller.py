@@ -17,7 +17,7 @@ from xml.dom import minidom
 import ast
 import os
 import logging
-import datetime, sys, json, urllib2, urllib, re
+import datetime, json, urllib2, re
 log_level = str(os.environ.get('LOG_LEVEL')).upper()
 if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
     log_level = 'ERROR'

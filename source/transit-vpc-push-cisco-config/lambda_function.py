@@ -18,7 +18,6 @@ from xml.dom import minidom
 import ast
 import time
 import os
-import string
 import logging
 log_level = str(os.environ.get('LOG_LEVEL')).upper()
 if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
@@ -281,7 +280,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         config_text.append('  keyring keyring-{}-{}'.format(vpn_connection_id,tunnelId))
         config_text.append('exit')
         config_text.append('interface Tunnel{}'.format(tunnelId))
-	config_text.append('  description {} from {} to {} for account {}'.format(vpn_connection_id, vpn_gateway_id, customer_gateway_id, account_id))
+        config_text.append('  description {} from {} to {} for account {}'.format(vpn_connection_id, vpn_gateway_id, customer_gateway_id, account_id))
         config_text.append('  ip vrf forwarding {}'.format(vpn_connection_id))
         config_text.append('  ip address {} 255.255.255.252'.format(customer_gateway_tunnel_inside_address_ip_address))
         config_text.append('  ip virtual-reassembly')
