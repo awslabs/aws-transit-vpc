@@ -4,16 +4,10 @@
   "Description": "(SO0001s) - Transit VPC spoke: Creates a spoke VPC for TransitVPC testing.",
 
   "Parameters": {
-    "PreferredPathTag": {
-      "Description": "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
+    "VpcCidr": {
+      "Description": "CIDR block for spoke VPC.",
       "Type": "String",
-      "Default": "transitvpc:preferred-path"
-    },
-    "PreferredPathValue": {
-      "Description": "Specify if there is a preferred CSR to control the traffic flow through the Transit VPC (e.g. when integrating with stateful on-prem firewalls).",
-      "Type": "String",
-      "Default": "none",
-      "AllowedValues": ["none", "CSR1", "CSR2"]
+      "Default": "10.255.0.0/16"
     },
     "SpokeTag": {
       "Description": "Tag to use to identify spoke VPCs to connect to Transit VPC.",
@@ -25,17 +19,23 @@
       "Type": "String",
       "Default": "true"
     },
-    "VpcCidr": {
-      "Description": "CIDR block for spoke VPC.",
+    "PreferredPathTag": {
+      "Description": "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
       "Type": "String",
-      "Default": "10.255.0.0/16"
+      "Default": "transitvpc:preferred-path"
+    },
+    "PreferredPathValue": {
+      "Description": "Specify if there is a preferred CSR to control the traffic flow through the Transit VPC (e.g. when integrating with stateful on-prem firewalls).",
+      "Type": "String",
+      "Default": "none",
+      "AllowedValues": ["none", "CSR1", "CSR2"]
     }
   },
   "Metadata": {
     "AWS::CloudFormation::Interface": {
       "ParameterGroups": [{
         "Label": {"default": "Network Configuration"},
-        "Parameters": ["VpcCidr", "SpokeTag","SpokeTagValue", "PreferredPathTag", "PreferredPathValue"]
+        "Parameters": ["VpcCidr", "SpokeTag", "SpokeTagValue", "PreferredPathTag", "PreferredPathValue"]
       }],
       "ParameterLabels": {
         "SpokeTag": {"default": "Transit VPC Tag Name"},

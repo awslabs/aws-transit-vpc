@@ -4,10 +4,22 @@
   "Description": "(SO0001) - Transit VPC: This template creates a dedicated transit VPC with Cisco CSRs for routing traffic. ***NOTE*** You must first subscribe to the appropriate Cisco CSR marketplace BYOL or License Included AMI from the AWS Marketplace before you launch this template. Version 5",
 
   "Parameters": {
+    "CSRType": {
+      "Description": "Maximum network througput required for CSR instances.",
+      "Type": "String",
+      "Default": "2x500Mbps",
+      "AllowedValues": ["2x500Mbps","2x1Gbps", "2x2Gbps", "2x4.5Gbps"]
+    },
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
       "Type": "AWS::EC2::KeyPair::KeyName",
       "Default": "Lab"
+    },
+    "LicenseModel": {
+      "Description": "Choose between BYOL (Bring Your Own License) and License Included license models. Remember to first subscribe the the appropriate Marketplace AMI!",
+      "Type": "String",
+      "Default": "LicenseIncluded",
+      "AllowedValues": ["LicenseIncluded", "BYOL"]
     },
     "TerminationProtection": {
       "Description": "Enable termination protection on the CSR EC2 instances to avoid accidential CSR termination?",
@@ -15,36 +27,16 @@
       "Default": "Yes",
       "AllowedValues": ["Yes", "No"]
     },
-    "PreferredPathTag": {
-      "Description": "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
+    "S3Prefix": {
+      "Description": "S3 prefix to append before S3 key names.",
       "Type": "String",
-      "Default": "transitvpc:preferred-path"
+      "Default": "vpnconfigs/",
+      "AllowedPattern": "^[a-z0-9A-Z_\/\\-\\.]*\/$"
     },
-    "SpokeTag": {
-      "Description": "Tag to use to identify spoke VPCs to connect to Transit VPC.",
+    "AccountId": {
+      "Description": "Another AWS Account ID to authorize access to VPN Config S3 bucket (for example bucket and KMS key policies).",
       "Type": "String",
-      "Default": "transitvpc:spoke"
-    },
-    "SpokeTagValue": {
-      "Description": "Tag value to use to identify spoke VPCs to connect to Transit VPC.",
-      "Type": "String",
-      "Default": "true"
-    },
-    "BgpAsn": {
-      "Description": "BGP ASN to use for Transit VPC.",
-      "Type": "String",
-      "Default": "64512"
-    },
-    "CreateVPCEndpoint": {
-      "Description": "Do you want an S3 endpoint created in this VPC?",
-      "Type": "String",
-      "Default": "Yes",
-      "AllowedValues": ["Yes", "No"]
-    },
-    "VPCRouteTable": {
-      "Description": "Route table ID for S3 endpoint to update with S3 routes (this value is ignored if an S3 endpoint is not created).",
-      "Type": "String",
-      "Default": "rtb-12345678"
+      "Default": ""
     },
     "TransitVPC": {
       "Description": "Existing VPC to deploy the CSRs into.",
@@ -58,28 +50,36 @@
       "Description": "Subnet for the second CSR (ideally a second AZ).",
       "Type": "AWS::EC2::Subnet::Id"
     },
-    "CSRType": {
-      "Description": "Maximum network througput required for CSR instances.",
+    "CreateVPCEndpoint": {
+      "Description": "Do you want an S3 endpoint created in this VPC?",
       "Type": "String",
-      "Default": "2x500Mbps",
-      "AllowedValues": ["2x500Mbps","2x1Gbps", "2x2Gbps", "2x4.5Gbps"]
+      "Default": "Yes",
+      "AllowedValues": ["Yes", "No"]
     },
-    "LicenseModel": {
-      "Description": "Choose between BYOL (Bring Your Own License) and License Included license models. Remember to first subscribe the the appropriate Marketplace AMI!",
+    "VPCRouteTable": {
+      "Description": "Route table ID for S3 endpoint to update with S3 routes (this value is ignored if an S3 endpoint is not created).",
       "Type": "String",
-      "Default": "LicenseIncluded",
-      "AllowedValues": ["LicenseIncluded", "BYOL"]
+      "Default": "rtb-12345678"
     },
-    "S3Prefix": {
-      "Description": "S3 prefix to append before S3 key names.",
+    "BgpAsn": {
+      "Description": "BGP ASN to use for Transit VPC.",
       "Type": "String",
-      "Default": "vpnconfigs/",
-      "AllowedPattern": "^[a-z0-9A-Z_\/\\-\\.]*\/$"
+      "Default": "64512"
     },
-    "AccountId": {
-      "Description": "Another AWS Account ID to authorize access to VPN Config S3 bucket (for example bucket and KMS key policies).",
+    "SpokeTag": {
+      "Description": "Tag to use to identify spoke VPCs to connect to Transit VPC.",
       "Type": "String",
-      "Default": ""
+      "Default": "transitvpc:spoke"
+    },
+    "SpokeTagValue": {
+      "Description": "Tag value to use to identify spoke VPCs to connect to Transit VPC.",
+      "Type": "String",
+      "Default": "true"
+    },
+    "PreferredPathTag": {
+      "Description": "Tag to use to configure a preferred CSR VPN endpoint to control traffic flow through the Transit VPC CSRs (e.g. when integrating with stateful on-prem firewalls).",
+      "Type": "String",
+      "Default": "transitvpc:preferred-path"
     }
   },
   "Conditions": {
