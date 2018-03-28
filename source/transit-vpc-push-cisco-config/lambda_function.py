@@ -26,22 +26,27 @@ log = logging.getLogger()
 log.setLevel(log_level)
 
 config_file=str(os.environ.get('CONFIG_FILE'))
-#These S3 endpoint URLs are provided to support VPC endpoints for S3 in regions such as Frankfort that require explicit region endpoint definition
+#These S3 endpoint URLs are provided to support VPC endpoints for S3 in regions such as Frankfurt that require explicit region endpoint definition
 endpoint_url = {
-  "us-east-1" : "https://s3.amazonaws.com",
-  "us-east-2" : "https://s3-us-east-2.amazonaws.com",
-  "us-west-1" : "https://s3-us-west-1.amazonaws.com",
-  "us-west-2" : "https://s3-us-west-2.amazonaws.com",
-  "eu-west-1" : "https://s3-eu-west-1.amazonaws.com",
-  "eu-west-2" : "https://s3-eu-west-2.amazonaws.com",
-  "eu-central-1" : "https://s3-eu-central-1.amazonaws.com",
-  "ca-central-1" : "https://s3-ca-central-1.amazonaws.com",
   "ap-northeast-1" : "https://s3-ap-northeast-1.amazonaws.com",
   "ap-northeast-2" : "https://s3-ap-northeast-2.amazonaws.com",
+  "ap-northeast-3" : "https://s3-ap-northeast-3.amazonaws.com",
   "ap-south-1" : "https://s3-ap-south-1.amazonaws.com",
   "ap-southeast-1" : "https://s3-ap-southeast-1.amazonaws.com",
   "ap-southeast-2" : "https://s3-ap-southeast-2.amazonaws.com",
-  "sa-east-1" : "https://s3-sa-east-1.amazonaws.com"
+  "ca-central-1" : "https://s3-ca-central-1.amazonaws.com",
+  "cn-north-1" : "https://s3.cn-north-1.amazonaws.com.cn",
+  "cn-northwest-1" : "https://s3.cn-northwest-1.amazonaws.com.cn",
+  "eu-central-1" : "https://s3-eu-central-1.amazonaws.com",
+  "eu-west-1" : "https://s3-eu-west-1.amazonaws.com",
+  "eu-west-2" : "https://s3-eu-west-2.amazonaws.com",
+  "eu-west-3" : "https://s3-eu-west-3.amazonaws.com",
+  "sa-east-1" : "https://s3-sa-east-1.amazonaws.com",
+  "us-east-1" : "https://s3.amazonaws.com",
+  "us-east-2" : "https://s3-us-east-2.amazonaws.com",
+  "us-gov-west-1" : "https://s3-fips-us-gov-west-1.amazonaws.com",
+  "us-west-1" : "https://s3-us-west-1.amazonaws.com",
+  "us-west-2" : "https://s3-us-west-2.amazonaws.com",
 }
 
 #Logic to determine when the prompt has been discovered
