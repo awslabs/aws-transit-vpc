@@ -27,6 +27,11 @@
       "Default": "Yes",
       "AllowedValues": ["Yes", "No"]
     },
+    "CustomAMI": {
+      "Description": "Leave blank to use the default Cisco AMI, or enter your custom AMI id",
+      "Type": "String",
+      "Default": ""
+    },
     "S3Prefix": {
       "Description": "S3 prefix to append before S3 key names.",
       "Type": "String",
@@ -88,14 +93,15 @@
   },
   "Conditions": {
     "AuthorizeAnotherAccount": {"Fn::Not": [{"Fn::Equals": [{"Ref": "AccountId"}, ""]}]},
-    "EnableTerm": {"Fn::Equals": [{"Ref": "TerminationProtection"}, "Yes"]}
+    "EnableTerm": {"Fn::Equals": [{"Ref": "TerminationProtection"}, "Yes"]},
+    "UseCustomAMI": {"Fn::Not": [{"Fn::Equals": [{"Ref": "CustomAMI"}, ""]}]}
   },
   "Metadata": {
     "AWS::CloudFormation::Interface": {
      "ParameterGroups": [
         {
           "Label": {"default":"Cisco CSR Configuration"},
-          "Parameters": ["CSRType", "KeyName", "LicenseModel", "TerminationProtection"]
+          "Parameters": ["CSRType", "KeyName", "LicenseModel", "TerminationProtection", "CustomAMI"]
         },
         {
           "Label": {"default":"AWS Service Configuration"},
@@ -125,7 +131,8 @@
         "S3Prefix": {"default": "Prefix for S3 Objects"},
         "LicenseModel": {"default": "License Model"},
         "TerminationProtection": {"default": "Enable Termination Protection"},
-        "AccountId": {"default": "Additional AWS Account ID (Optional)"}
+        "AccountId": {"default": "Additional AWS Account ID (Optional)"},
+        "CustomAMI": {"default": "Custom AMI ID (Optional)"}
       }
     }
   },
@@ -378,7 +385,7 @@
         "InstanceType": {"Fn::FindInMap": ["CsrInstance", {"Ref": "CSRType"}, "Type"]},
         "KeyName": {"Ref": "KeyName"},
         "DisableApiTermination": {"Fn::If": ["EnableTerm", true, false]},
-        "ImageId": {"Fn::FindInMap": ["CiscoCsrAMI", {"Ref": "AWS::Region"}, {"Ref": "LicenseModel"}]},
+        "ImageId": {"Fn::If": ["UseCustomAMI", {"Ref": "CustomAMI"}, {"Fn::FindInMap": ["CiscoCsrAMI", {"Ref": "AWS::Region"}, {"Ref": "LicenseModel"}]}]},
         "SubnetId": {"Ref": "VPCPubSub1"},
         "SecurityGroupIds": [{"Ref": "CSRSecurityGroup"}],
         "Tags": [
@@ -422,7 +429,7 @@
         "InstanceType": {"Fn::FindInMap": ["CsrInstance", {"Ref": "CSRType"}, "Type"]},
         "KeyName": {"Ref": "KeyName"},
         "DisableApiTermination": {"Fn::If": ["EnableTerm", true, false]},
-        "ImageId": {"Fn::FindInMap": ["CiscoCsrAMI", {"Ref": "AWS::Region"}, {"Ref": "LicenseModel"}]},
+        "ImageId": {"Fn::If": ["UseCustomAMI", {"Ref": "CustomAMI"}, {"Fn::FindInMap": ["CiscoCsrAMI", {"Ref": "AWS::Region"}, {"Ref": "LicenseModel"}]}]},
         "SubnetId": {"Ref": "VPCPubSub2"},
         "SecurityGroupIds": [{"Ref": "CSRSecurityGroup"}],
         "Tags": [
