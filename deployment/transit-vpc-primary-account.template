@@ -209,7 +209,7 @@
               "Effect": "Deny",
               "Principal": "*",
               "Action": "s3:PutObject",
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "VPNConfigS3Bucket"},"/",{"Ref": "S3Prefix"}, "*"]]},
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${VPNConfigS3Bucket}/${S3Prefix}*"},
               "Condition": {
                 "StringNotEquals": {"s3:x-amz-server-side-encryption": "aws:kms"}
               }
@@ -217,9 +217,15 @@
             {
               "Action":["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl"],
               "Effect":"Allow",
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "VPNConfigS3Bucket"},"/",{"Ref": "S3Prefix"}, "*"]]},
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${VPNConfigS3Bucket}/${S3Prefix}*"},
               "Principal": {
-                "AWS": [{"Fn::Join": ["", ["arn:aws:iam::",{"Fn::If": ["AuthorizeAnotherAccount", {"Ref": "AccountId"}, {"Ref": "AWS::AccountId"}]}, ":root"]]}]
+                "AWS": [{"Fn::Sub": [
+                  "arn:${Partition}:iam::${AccountId}:root",
+                  {
+                    "Partition": {"Ref": "AWS::Partition"},
+                    "AccountId": {"Fn::If": ["AuthorizeAnotherAccount", {"Ref": "AccountId"}, {"Ref": "AWS::AccountId"}]}
+                  }
+                ]}]
               }
             }
           ]
@@ -238,7 +244,7 @@
               "Sid": "Enable IAM User Permissions",
               "Effect": "Allow",
               "Principal": {"AWS": [
-                {"Fn::Join": ["", ["arn:aws:iam::",{"Ref": "AWS::AccountId"}, ":root"]]}
+                {"Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"}
               ]},
               "Action": "kms:*",
               "Resource": "*"
@@ -247,7 +253,13 @@
               "Sid": "Allow use of the key",
               "Effect": "Allow",
               "Principal": {"AWS": [
-                {"Fn::Join": ["", ["arn:aws:iam::",{"Fn::If": ["AuthorizeAnotherAccount", {"Ref": "AccountId"}, {"Ref": "AWS::AccountId"}]}, ":root"]]},
+                {"Fn::Sub": [
+                  "arn:${Partition}:iam::${AccountId}:root",
+                  {
+                    "Partition": {"Ref": "AWS::Partition"},
+                    "AccountId": {"Fn::If": ["AuthorizeAnotherAccount", {"Ref": "AccountId"}, {"Ref": "AWS::AccountId"}]}
+                  }
+                ]},
                 {"Fn::GetAtt": ["SolutionHelperRole", "Arn"]},
                 {"Fn::GetAtt": ["CiscoConfigFunctionRole", "Arn"]},
                 {"Fn::GetAtt": ["TransitVpcPollerRole", "Arn"]}
@@ -500,12 +512,12 @@
                 "logs:CreateLogStream",
                 "logs:PutLogEvents"
               ],
-              "Resource": {"Fn::Join": ["", ["arn:aws:logs:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"}, ":log-group:/aws/lambda/*"]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"}
             },
             {
               "Effect": "Allow",
               "Action": "s3:PutBucketNotification",
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "VPNConfigS3Bucket"}]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${VPNConfigS3Bucket}"}
             },
             {
               "Effect": "Allow",
@@ -530,12 +542,12 @@
                 "s3:GetObject",
                 "s3:DeleteObject"
               ],
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "VPNConfigS3Bucket"}, "/", {"Ref": "S3Prefix"}, "*"]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${VPNConfigS3Bucket}/${S3Prefix}*"}
             },
             {
               "Effect": "Allow",
               "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::solutions-reference/*"
+              "Resource": "arn:${AWS::Partition}:s3:::solutions-reference/*"
             }
           ]
         }
@@ -561,13 +573,19 @@
       "Properties": {
         "ServiceToken": {"Fn::GetAtt": ["SolutionHelper", "Arn"]},
         "Region": {"Ref": "AWS::Region"},
-        "CreateSshKey": {"Fn::Join": ["", [
-          "{'Bucket': '",{"Ref": "VPNConfigS3Bucket"},"', ",
-          "'SSEKMSKeyId': 'arn:aws:kms:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"}, "', ",
-          "'PrivateKey': '", {"Ref": "S3Prefix"}, {"Fn::FindInMap": ["Function", "Csr", "PrivateKey"]}, "', ",
-          "'PublicKey': '", {"Ref": "S3Prefix"}, {"Fn::FindInMap": ["Function", "Csr", "PublicKey"]}, "' ",
-          "}"
-        ]]}
+        "CreateSshKey": {"Fn::Sub": [
+          "{'Bucket': '${VPNConfigS3Bucket}', 'SSEKMSKeyId': 'arn:${Partition}:kms:${Region}:${AccountId}:key/${KMSKey}', 'PrivateKey': '${S3Prefix}${PrivateKey}', 'PublicKey': '${S3Prefix}${PublicKey}'}",
+          {
+            "VPNConfigS3Bucket": {"Ref": "VPNConfigS3Bucket"},
+            "Partition": {"Ref": "AWS::Partition"},
+            "Region": {"Ref": "AWS::Region"},
+            "AccountId": {"Ref": "AWS::AccountId"},
+            "KMSKey": {"Ref": "KMSKey"},
+            "S3Prefix": {"Ref": "S3Prefix"},
+            "PrivateKey": {"Fn::FindInMap": ["Function", "Csr", "PrivateKey"]},
+            "PublicKey": {"Fn::FindInMap": ["Function", "Csr", "PublicKey"]}
+          }
+        ]}
       }
     },
     "CreateRandomPassword": {
@@ -608,7 +626,7 @@
                 "logs:CreateLogStream",
                 "logs:PutLogEvents"
               ],
-              "Resource": {"Fn::Join": ["", ["arn:aws:logs:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"}, ":log-group:/aws/lambda/*"]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"}
             },
             {
               "Effect": "Allow",
@@ -626,7 +644,7 @@
                 "s3:PutObject",
                 "s3:GetObject"
               ],
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "VPNConfigS3Bucket"}, "/", {"Ref": "S3Prefix"}, "*"]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${VPNConfigS3Bucket}/${S3Prefix}*"}
             }
           ]
         }
@@ -689,29 +707,32 @@
       "Type": "Custom::LoadLambda",
       "Properties": {
         "ServiceToken": {"Fn::GetAtt": ["SolutionHelper", "Arn"]},
-        "StoreInS3KMS": {"Fn::Join": ["", [
-          "[{'Bucket': '", {"Ref": "VPNConfigS3Bucket"}, "', ",
-          "'Key': '", {"Ref": "S3Prefix"}, "transit_vpc_config.txt', ",
-          "' SSEKMSKeyId': 'arn:aws:kms:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"}, "', ",
-          "'Body': \"{",
-          "'UUID':'", {"Fn::GetAtt": ["CreateUniqueID", "UUID"]},"',",
-          "'SENDDATA':'", {"Fn::FindInMap": ["Send", "AnonymousUsage", "Data"]}, "',",
-          "'EIP1':'", {"Ref": "CsrEip1"}, "',",
-          "'EIP2':'", {"Ref": "CsrEip2"}, "',",
-          "'PIP1':'", {"Fn::GetAtt": ["VpcCsr1", "PrivateIp"]}, "',",
-          "'PIP2':'", {"Fn::GetAtt": ["VpcCsr2", "PrivateIp"]}, "',",
-          "'BGP_ASN':", {"Ref": "BgpAsn"}, ",",
-          "'PREFERRED_PATH_TAG':'", {"Ref": "PreferredPathTag"}, "',",
-          "'HUB_TAG':'", {"Ref": "SpokeTag"}, "',",
-          "'HUB_TAG_VALUE':'", {"Ref": "SpokeTagValue"}, "',",
-          "'USER_NAME':'", {"Fn::FindInMap": ["Function", "Csr", "UserName"]}, "',",
-          "'PRIVATE_KEY':'", {"Fn::FindInMap": ["Function", "Csr", "PrivateKey"]}, "',",
-          "'PUBLIC_KEY':'", {"Fn::GetAtt": ["CreateRsaKey", "PubKey"]},"',",
-          "'PASSWORD':'", {"Fn::GetAtt": ["CreateRandomPassword", "Password"]}, "',",
-          "'KMS_KEY':'arn:aws:kms:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"},"'",
-          "}\"",
-          "}]"
-        ]]}
+        "StoreInS3KMS": {"Fn::Sub": [
+          "[{'Bucket': '${VPNConfigS3Bucket}', 'Key': '${S3Prefix}transit_vpc_config.txt', 'SSEKMSKeyId': 'arn:${Partition}:kms:${Region}:${AccountId}:key/${KMSKey}', 'Body': \"{'UUID':'${UUID}','SENDDATA':'${SendData}','EIP1':'${CsrEip1}','EIP2':'${CsrEip2}','PIP1':'${PIP1}','PIP2':'${PIP2}','BGP_ASN':'${BgpAsn}','PREFERRED_PATH_TAG':'${PreferredPathTag}','HUB_TAG':'${SpokeTag}','HUB_TAG_VALUE':'${SpokeTagValue}','USER_NAME':'${UserName}','PRIVATE_KEY':'${PrivateKey}','PUBLIC_KEY':'${PublicKey}','PASSWORD':'${Password}','KMS_KEY':'arn:${Partition}:kms:${Region}:${AccountId}:key/${KMSKey}'}\"}]",
+          {
+            "VPNConfigS3Bucket": {"Ref": "VPNConfigS3Bucket"},
+            "S3Prefix": {"Ref": "S3Prefix"},
+            "Partition": {"Ref": "AWS::Partition"},
+            "Region": {"Ref": "AWS::Region"},
+            "AccountId": {"Ref": "AWS::AccountId"},
+            "KMSKey": {"Ref": "KMSKey"},
+            "CsrEip1": {"Ref": "CsrEip1"},
+            "CsrEip2": {"Ref": "CsrEip2"},
+            "PIP1": {"Fn::GetAtt": ["VpcCsr1", "PrivateIp"]},
+            "PIP2": {"Fn::GetAtt": ["VpcCsr2", "PrivateIp"]},
+            "BgpAsn": {"Ref": "BgpAsn"},
+            "PreferredPathTag": {"Ref": "PreferredPathTag"},
+            "SpokeTag": {"Ref": "SpokeTag"},
+            "SpokeTagValue": {"Ref": "SpokeTagValue"},
+            "UUID": {"Fn::GetAtt": ["CreateUniqueID", "UUID"]},
+            "SendData": {"Fn::FindInMap": ["Send", "AnonymousUsage", "Data"]},
+            "UserName": {"Fn::FindInMap": ["Function", "Csr", "UserName"]},
+            "PrivateKey": {"Fn::FindInMap": ["Function", "Csr", "PrivateKey"]},
+            "PublicKey": {"Fn::GetAtt": ["CreateRsaKey", "PubKey"]},
+            "Password": {"Fn::GetAtt": ["CreateRandomPassword" , "Password"]},
+            "KMSKey": {"Ref": "KMSKey"}
+          }
+        ]}
       }
     },
     "TransitVpcPollerRole": {
@@ -745,7 +766,7 @@
                 "logs:CreateLogStream",
                 "logs:PutLogEvents"
               ],
-              "Resource": {"Fn::Join": ["", ["arn:aws:logs:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":log-group:/aws/lambda/*"]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"}
             },
             {
               "Effect": "Allow",
@@ -766,7 +787,7 @@
                 "s3:PutObjectAcl",
                 "s3:GetObject"
               ],
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "VPNConfigS3Bucket"}, "/", {"Ref": "S3Prefix"}, "*"]]}
+              "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${VPNConfigS3Bucket}/${S3Prefix}*"}
             }
           ]
         }
@@ -870,7 +891,7 @@
         "EvaluationPeriods": "15",
         "ComparisonOperator": "GreaterThanThreshold",
         "Threshold": "0",
-        "AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", {"Ref": "AWS::Region"}, ":ec2:recover"]]}],
+        "AlarmActions": [{"Fn::Sub": "arn:${AWS::Partition}:automate:${AWS::Region}:ec2:recover"}],
         "Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "VpcCsr1"}}]
       }
     },
@@ -885,7 +906,7 @@
         "EvaluationPeriods": "15",
         "ComparisonOperator": "GreaterThanThreshold",
         "Threshold": "0",
-        "AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", {"Ref": "AWS::Region"}, ":ec2:recover"]]}],
+        "AlarmActions": [{"Fn::Sub": "arn:${AWS::Partition}:automate:${AWS::Region}:ec2:recover"}],
         "Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "VpcCsr2"}}]
       }
     },

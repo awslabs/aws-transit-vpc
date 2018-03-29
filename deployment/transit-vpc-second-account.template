@@ -55,7 +55,7 @@
                   "logs:CreateLogStream",
                   "logs:PutLogEvents"
                 ],
-                "Resource": {"Fn::Join": ["", ["arn:aws:logs:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"}, ":log-group:/aws/lambda/*"]]}
+                "Resource": {"Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"}
               },
               {
                 "Effect": "Allow",
@@ -85,7 +85,7 @@
                   "s3:PutObjectAcl",
                   "s3:GetObject"
                 ],
-                "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "BucketName"}, "/", {"Ref": "BucketPrefix"}, "*"]]}
+                "Resource": {"Fn::Sub": "arn:${AWS::Partition}:s3:::${BucketName}/${BucketPrefix}*"}
               }
             ]
           }
