@@ -17,7 +17,7 @@ from xml.dom import minidom
 import ast
 import os
 import logging
-import datetime, sys, json, urllib2, urllib, re
+import datetime, json, urllib2, re
 log_level = str(os.environ.get('LOG_LEVEL')).upper()
 if log_level not in ['DEBUG', 'INFO','WARNING', 'ERROR','CRITICAL']:
     log_level = 'ERROR'
@@ -27,6 +27,7 @@ log.setLevel(log_level)
 bucket_name=str(os.environ.get('BUCKET_NAME'))
 bucket_prefix=str(os.environ.get('BUCKET_PREFIX'))
 config_file=str(os.environ.get('CONFIG_FILE'))
+default_region=str(os.environ.get('AWS_DEFAULT_REGION', os.environ.get('AWS_REGION', "us-east-1")))
 
 #VGW tags come in the format of [{"Key": "Tag1", "Value":"Tag1value"},{"Key":"Tag2","Value":"Tag2value"}]
 #This function converts the array of Key/Value dicts to a single tag dictionary
@@ -111,7 +112,14 @@ def lambda_handler(event, context):
   # use this variable to determine if a VGW has been processed so we will only process one VGW per run (one per minute)
   processed_vgw = False
   #Get list of regions so poller can look for VGWs in all regions
-  ec2=boto3.client('ec2',region_name='us-east-1')
+  if default_region.startswith('cn-'):
+    master_region = 'cn-north-1'
+  elif default_region.startswith('us-gov-'):
+    master_region = 'us-gov-west-1'
+  else:
+    master_region = 'us-east-1'
+
+  ec2=boto3.client('ec2',region_name=master_region)
   regions=ec2.describe_regions()
   for region in regions['Regions']:
     #Get region name for the current region

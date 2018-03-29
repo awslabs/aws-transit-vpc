@@ -1,62 +1,47 @@
-#!/bin/bash
+#!/bin/bash -ex
+# ./build-s3-dist.sh <s3-bucket-name>
+#
+# You must have Docker installed (to ensure we get a clean copy of Amazon Linux)
 
-# This assumes all of the OS-level configuration has been completed and git repo has already been cloned
-#sudo apt-get update
-#sudo apt-get install zip -y
-#sudo pip install --upgrade pip
-#pip install --upgrade setuptools
-#pip install --upgrade virtualenv
-
-# This script should be run from the repo's deployment directory
-# cd deployment
-# ./build-s3-dist.sh source-bucket-base-name
-# source-bucket-base-name should be the base name for the S3 bucket location where the template will source the Lambda code from.
-# The template will append '-[region_name]' to this bucket name.
-# For example: ./build-s3-dist.sh solutions
-# The template will then expect the source code to be located in the solutions-[region_name] bucket
-
-# Check to see if input has been provided:
-if [ -z "$1" ]; then
-    echo "Please provide the base source bucket name where the lambda code will eventually reside.\nFor example: ./build-s3-dist.sh solutions"
-    exit 1
+# Check to see if input has been provided
+if [[ $# -ne 1 || "$1" = "-h" || "$1" = "--help" ]]; then
+  echo "Usage: build-s3-dist.sh <bucket-name>" 1>&2
+  echo "<bucket-name> is the name of the S3 bucket that will house the Lambda" 1>&2;
+  echo "code." 1>&2;
+  exit 1;
 fi
 
-# Build source
-echo "Staring to build distribution"
-echo "export deployment_dir=`pwd`"
-export deployment_dir=`pwd`
-echo "mkdir -p dist"
-mkdir -p dist
-echo "cp -f *.template dist"
-cp -f *.template dist
-echo "Updating code source bucket in templates with $1"
-export replace="s/%%BUCKET_NAME%%/$1/g"
-echo "sed -i -e $replace dist/transit-vpc-primary-account-existing-vpc.template"
-sed -i -e $replace dist/transit-vpc-primary-account-existing-vpc.template
-echo "sed -i -e $replace dist/transit-vpc-primary-account-marketplace.template"
-sed -i -e $replace dist/transit-vpc-primary-account-marketplace.template
-echo "sed -i -e $replace dist/transit-vpc-primary-account.template"
-sed -i -e $replace dist/transit-vpc-primary-account.template
-echo "sed -i -e $replace dist/transit-vpc-second-account.template"
-sed -i -e $replace dist/transit-vpc-second-account.template
+s3_bucket="$1"
+deployment_dir="$(dirname "$0")"
+base_dir="$(cd $deployment_dir/..; /bin/pwd)"
+source_dir="$base_dir/source"
+dist_dir="$base_dir/dist"
 
-cd $deployment_dir/../source/transit-vpc-poller
+# Create the dist directory if it doesn't exist.
+test -d "$dist_dir" || mkdir -p "$dist_dir"
+test -d "$dist_dir/transit-vpc/latest" || mkdir -p "$dist_dir/transit-vpc/latest"
+
+# Replace the %%BUCKET_NAME%% placeholder
+echo "Updating S3 bucket name in templates with $s3_bucket"
+replace="s/%%BUCKET_NAME%%/$s3_bucket/g"
+for sourcepath in "$deployment_dir"/*.template; do
+  filename="$(basename "$sourcepath")"
+  destpath="$dist_dir/$filename"
+  sed -e $replace "$sourcepath" > "$destpath";
+done;
+
+# Create the Lambda ZIP archive for the transit poller. This is just the single
+# transit-vpc-poller.py file.
 echo "Creating transit-vpc-poller ZIP file"
-zip -q -r9 $deployment_dir/dist/transit-vpc-poller.zip *
-echo "Building transit-vpc-push-cisco-config ZIP file"
-cd $deployment_dir/dist
-pwd
-echo "virtualenv env"
-virtualenv env
-echo "source env/bin/activate"
-source env/bin/activate
-echo "pip install $deployment_dir/../source/transit-vpc-push-cisco-config/. --target=$deployment_dir/dist/env/lib/python2.7/site-packages/"
-pip install $deployment_dir/../source/transit-vpc-push-cisco-config/. --target=$deployment_dir/dist/env/lib/python2.7/site-packages/
-cd $deployment_dir/dist/env/lib/python2.7/site-packages/
-zip -r9 $deployment_dir/dist/transit-vpc-push-cisco-config.zip .
-cd $deployment_dir/dist
-zip -q -d transit-vpc-push-cisco-config.zip pip*
-zip -q -d transit-vpc-push-cisco-config.zip easy*
-echo "Clean up build material in $VIRTUAL_ENV"
-rm -rf $VIRTUAL_ENV
-echo "Completed building distribution"
+cd "$source_dir/transit-vpc-poller"
+zip -q -r9 "$dist_dir/transit-vpc/latest/transit-vpc-poller.zip" *
+
+# Create the Lambda ZIP archive for the CSR configuration pusher. This is more
+# involved since it involves external libraries
+echo "Creating transit-vpc-push-cisco-config ZIP file"
+cd "$source_dir/transit-vpc-push-cisco-config"
+docker build -t transit-vpc-push-cisco-config:latest .
+docker run --mount "type=bind,dst=/dist,src=$dist_dir" transit-vpc-push-cisco-config:latest \
+  cp /transit-vpc-push-cisco-config.zip /dist/transit-vpc/latest/
+
+echo "Distribution files: $dist_dir"

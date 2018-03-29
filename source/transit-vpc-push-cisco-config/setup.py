@@ -1,7 +1,6 @@
 # coding: utf-8
 
-from setuptools import setup, find_packages
-from pip.req import parse_requirements
+from setuptools import setup
 
 setup(
     name='transit_vpc_push_cisco_config',
