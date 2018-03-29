@@ -19,6 +19,7 @@ dist_dir="$base_dir/dist"
 
 # Create the dist directory if it doesn't exist.
 test -d "$dist_dir" || mkdir -p "$dist_dir"
+test -d "$dist_dir/transit-vpc/latest" || mkdir -p "$dist_dir/transit-vpc/latest"
 
 # Replace the %%BUCKET_NAME%% placeholder
 echo "Updating S3 bucket name in templates with $s3_bucket"
@@ -33,7 +34,7 @@ done;
 # transit-vpc-poller.py file.
 echo "Creating transit-vpc-poller ZIP file"
 cd "$source_dir/transit-vpc-poller"
-zip -q -r9 "$dist_dir/transit-vpc-poller.zip" *
+zip -q -r9 "$dist_dir/transit-vpc/latest/transit-vpc-poller.zip" *
 
 # Create the Lambda ZIP archive for the CSR configuration pusher. This is more
 # involved since it involves external libraries
@@ -41,6 +42,6 @@ echo "Creating transit-vpc-push-cisco-config ZIP file"
 cd "$source_dir/transit-vpc-push-cisco-config"
 docker build -t transit-vpc-push-cisco-config:latest .
 docker run --mount "type=bind,dst=/dist,src=$dist_dir" transit-vpc-push-cisco-config:latest \
-  cp /transit-vpc-push-cisco-config.zip /dist
+  cp /transit-vpc-push-cisco-config.zip /dist/transit-vpc/latest/
 
 echo "Distribution files: $dist_dir"
