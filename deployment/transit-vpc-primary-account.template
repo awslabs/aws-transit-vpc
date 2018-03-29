@@ -94,6 +94,7 @@
   "Conditions": {
     "AuthorizeAnotherAccount": {"Fn::Not": [{"Fn::Equals": [{"Ref": "AccountId"}, ""]}]},
     "EnableTerm": {"Fn::Equals": [{"Ref": "TerminationProtection"}, "Yes"]},
+    "GovCloud": {"Fn::Equals": [{"Ref": "AWS::Partition"}, "aws-us-gov"]},
     "UseCustomAMI": {"Fn::Not": [{"Fn::Equals": [{"Ref": "CustomAMI"}, ""]}]}
   },
   "Metadata": {
@@ -561,7 +562,7 @@
         "Role": {"Fn::GetAtt": ["SolutionHelperRole" , "Arn"]},
         "Description": "Transit VPC: CloudFormation custom resource function invoked during transit VPC CloudFormation create, update, and delete stack operations.",
         "Code": {
-          "S3Bucket": {"Fn::Join": ["", ["solutions-", {"Ref": "AWS::Region"}]]},
+          "S3Bucket": {"Fn::Join": ["", [{"Fn::If": ["GovCloud", "cuthbert-", ""]}, "solutions-", {"Ref": "AWS::Region"}]]},
           "S3Key": "library/solution-helper/v3/solution-helper.zip"
         },
         "Runtime": "python2.7",
