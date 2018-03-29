@@ -8,7 +8,7 @@
       "Description": "Maximum network througput required for CSR instances.",
       "Type": "String",
       "Default": "2x500Mbps",
-      "AllowedValues": ["2x500Mbps","2x1Gbps", "2x2Gbps", "2x4.5Gbps"]
+      "AllowedValues": ["2x500Mbps", "2x1Gbps", "2x2Gbps", "2x4.5Gbps"]
     },
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -598,25 +598,25 @@
       "Properties": {
         "ServiceToken": {"Fn::GetAtt": ["SolutionHelper", "Arn"]},
         "StoreInS3KMS": {"Fn::Join": ["", [
-          "[{'Bucket': '",{"Ref": "VPNConfigS3Bucket"},"', ",
+          "[{'Bucket': '", {"Ref": "VPNConfigS3Bucket"}, "', ",
           "'Key': '", {"Ref": "S3Prefix"}, "transit_vpc_config.txt', ",
-          "'SSEKMSKeyId': 'arn:aws:kms:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"}, "', ",
+          "'SSEKMSKeyId': 'arn:aws:kms:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"}, "', ",
           "'Body': \"{",
-          "'UUID':'",{"Fn::GetAtt": ["CreateUniqueID", "UUID"]},"',",
-          "'SENDDATA':'",{"Fn::FindInMap": ["Send", "AnonymousUsage", "Data"]},"',",
-          "'EIP1':'",{"Ref": "CsrEip1"},"',",
-          "'EIP2':'",{"Ref": "CsrEip2"},"',",
-          "'PIP1':'",{"Fn::GetAtt": ["VpcCsr1", "PrivateIp"]},"',",
-          "'PIP2':'",{"Fn::GetAtt": ["VpcCsr2", "PrivateIp"]},"',",
-          "'BGP_ASN':",{"Ref": "BgpAsn"},",",
-          "'PREFERRED_PATH_TAG':'",{"Ref": "PreferredPathTag"},"',",
-          "'HUB_TAG':'",{"Ref": "SpokeTag"},"',",
-          "'HUB_TAG_VALUE':'",{"Ref": "SpokeTagValue"},"',",
-          "'USER_NAME':'",{"Fn::FindInMap": ["Function", "Csr", "UserName"]},"',",
-          "'PRIVATE_KEY':'",{"Fn::FindInMap": ["Function", "Csr", "PrivateKey"]},"',",
-          "'PUBLIC_KEY':'",{"Fn::GetAtt": ["CreateRsaKey", "PubKey"]},"',",
-          "'PASSWORD':'",{"Fn::GetAtt": ["CreateRandomPassword" , "Password"]},"',",
-          "'KMS_KEY':'arn:aws:kms:",{"Ref": "AWS::Region"},":",{"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"},"'",
+          "'UUID':'", {"Fn::GetAtt": ["CreateUniqueID", "UUID"]}, "',",
+          "'SENDDATA':'", {"Fn::FindInMap": ["Send", "AnonymousUsage", "Data"]}, "',",
+          "'EIP1':'", {"Ref": "CsrEip1"}, "',",
+          "'EIP2':'", {"Ref": "CsrEip2"}, "',",
+          "'PIP1':'", {"Fn::GetAtt": ["VpcCsr1", "PrivateIp"]}, "',",
+          "'PIP2':'", {"Fn::GetAtt": ["VpcCsr2", "PrivateIp"]}, "',",
+          "'BGP_ASN':", {"Ref": "BgpAsn"}, ",",
+          "'PREFERRED_PATH_TAG':'", {"Ref": "PreferredPathTag"}, "',",
+          "'HUB_TAG':'", {"Ref": "SpokeTag"}, "',",
+          "'HUB_TAG_VALUE':'", {"Ref": "SpokeTagValue"}, "',",
+          "'USER_NAME':'", {"Fn::FindInMap": ["Function", "Csr", "UserName"]}, "',",
+          "'PRIVATE_KEY':'", {"Fn::FindInMap": ["Function", "Csr", "PrivateKey"]}, "',",
+          "'PUBLIC_KEY':'", {"Fn::GetAtt": ["CreateRsaKey", "PubKey"]}, "',",
+          "'PASSWORD':'", {"Fn::GetAtt": ["CreateRandomPassword" , "Password"]}, "',",
+          "'KMS_KEY':'arn:aws:kms:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":key/", {"Ref": "KMSKey"},"'",
           "}\"",
           "}]"
         ]]}
@@ -784,7 +784,7 @@
         "ComparisonOperator": "GreaterThanThreshold",
         "Threshold": "0",
         "AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", {"Ref": "AWS::Region"}, ":ec2:recover"]]}],
-        "Dimensions": [{"Name": "InstanceId","Value": {"Ref": "VpcCsr1"}}]
+        "Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "VpcCsr1"}}]
       }
     },
     "CSR2RecoveryAlarm": {
@@ -799,7 +799,7 @@
         "ComparisonOperator": "GreaterThanThreshold",
         "Threshold": "0",
         "AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", {"Ref": "AWS::Region"}, ":ec2:recover"]]}],
-        "Dimensions": [{"Name": "InstanceId","Value": {"Ref": "VpcCsr2"}}]
+        "Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "VpcCsr2"}}]
       }
     },
     "CreateUniqueID": {
