@@ -33,7 +33,7 @@
     "BgpAsn" : {
       "Description" : "BGP ASN to use for Transit VPC.",
       "Type" : "String",
-      "Default" : "64512"
+      "Default" : "64545"
     },
     "VpcCidr" : {
       "Description" : "CIDR block for Transit VPC.",

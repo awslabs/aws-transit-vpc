@@ -33,7 +33,7 @@
     "BgpAsn" : {
       "Description" : "BGP ASN to use for Transit VPC.",
       "Type" : "String",
-      "Default" : "64512"
+      "Default" : "64545"
     },
     "CreateVPCEndpoint" : {
       "Description" : "Do you want an S3 endpoint created in this VPC?",
