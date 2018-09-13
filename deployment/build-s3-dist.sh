@@ -52,6 +52,13 @@ echo "source env/bin/activate"
 source env/bin/activate
 echo "pip install $deployment_dir/../source/transit-vpc-push-cisco-config/. --target=$deployment_dir/dist/env/lib/python2.7/site-packages/"
 pip install $deployment_dir/../source/transit-vpc-push-cisco-config/. --target=$deployment_dir/dist/env/lib/python2.7/site-packages/
+# TransitVPC-11 - 09/06/2018 - Allow build fail
+# fail build if pip install fails
+instl_status=$?
+if [ ${instl_status} != '0' ]; then
+  echo "pip install cisco configurator status: ${instl_status}"
+  exit ${instl_status}
+fi
 cd $deployment_dir/dist/env/lib/python2.7/site-packages/
 zip -r9 $deployment_dir/dist/transit-vpc-push-cisco-config.zip .
 cd $deployment_dir/dist

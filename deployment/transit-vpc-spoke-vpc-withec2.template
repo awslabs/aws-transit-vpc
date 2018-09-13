@@ -215,7 +215,13 @@
           "FromPort" : "-1",
           "ToPort" : "-1",
           "CidrIp" : { "Ref" : "IcmpCidr" }
-        } ]
+        } ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
       }
     },
     "EC2Eip" : {

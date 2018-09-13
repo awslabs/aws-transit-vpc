@@ -33,7 +33,7 @@
     "BgpAsn" : {
       "Description" : "BGP ASN to use for Transit VPC.",
       "Type" : "String",
-      "Default" : "64512"
+      "Default" : "64525"
     },
     "CreateVPCEndpoint" : {
       "Description" : "Do you want an S3 endpoint created in this VPC?",
@@ -74,7 +74,7 @@
       "Description" : "S3 prefix to append before S3 key names.",
       "Type" : "String",
       "Default" : "vpnconfigs/",
-      "AllowedPattern": "^[a-z0-9A-Z_\/\\-\\.]*\/$"
+      "AllowedPattern": "^[a-zA-Z0-9_\\-/.]*/$"
     },
     "AccountId" : {
       "Description" : "Another AWS Account ID to authorize access to VPN Config S3 bucket (for example bucket and KMS key policies).",
@@ -307,34 +307,35 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
 	  "ios-config-1=\"username ",
 	  { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]},
-	  " priv 15 pass ",
+	  " priv 15 algorithm-type sha256 secret ",
 	  { "Fn::GetAtt" : [ "CreateRandomPassword" , "Password" ] },"\"\n",
 	  "ios-config-2=\"service password-encryption\"\n",
 	  "ios-config-3=\"crypto isakmp policy 200\"\n",
-          "ios-config-4=\"encryption aes 128\"\n",
-          "ios-config-5=\"authentication pre-share\"\n",
+    "ios-config-4=\"encryption aes 128\"\n",
+    "ios-config-5=\"authentication pre-share\"\n",
 	  "ios-config-6=\"group 2\"\n",
-          "ios-config-7=\"lifetime 28800\"\n",
-          "ios-config-8=\"hash sha\"\n",
+    "ios-config-7=\"lifetime 28800\"\n",
+    "ios-config-8=\"hash sha\"\n",
 	  "ios-config-9=\"crypto ipsec transform-set ipsec-prop-vpn-aws esp-aes 128 esp-sha-hmac\"\n",
 	  "ios-config-10=\"mode tunnel\"\n",
 	  "ios-config-11=\"crypto ipsec df-bit clear\"\n",
-	  "ios-config-12=\"crypto isakmp keepalive 15 10 on-demand\"\n",
+    "ios-config-12=\"crypto isakmp keepalive 10 10 periodic\"\n",
 	  "ios-config-13=\"crypto ipsec security-association replay window-size 1024\"\n",
 	  "ios-config-14=\"crypto ipsec fragmentation before-encryption\"\n",
-	  "ios-config-15=\"crypto ipsec profile ipsec-vpn-aws\"\n",
-	  "ios-config-16=\"set pfs group2\"\n",
-	  "ios-config-17=\"set security-association lifetime seconds 3600\"\n",
-	  "ios-config-18=\"set transform-set ipsec-prop-vpn-aws\"\n",
-	  "ios-config-19=\"router bgp ", { "Ref" : "BgpAsn" },"\"\n",
-	  "ios-config-20=\"bgp log-neighbor-changes\"\n",
-	  "ios-config-21=\"ip vrf vpn0\"\n",
-	  "ios-config-22=\"rd ", { "Ref" : "BgpAsn" }, ":0\"\n",
-	  "ios-config-23=\"ip ssh pubkey-chain\"\n",
-	  "ios-config-24=\"username ", { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]}, "\"\n",
-	  "ios-config-25=\"key-hash ssh-rsa ", { "Fn::GetAtt" : [ "CreateRsaKey", "Fingerprint" ] },"\"\n",
-	  "ios-config-26=\"ip ssh server algorithm authentication publickey\"\n",
-	  "ios-config-27=\"ip ssh maxstartups 1\"\n"
+    "ios-config-15=\"no crypto ipsec nat-transparency udp-encapsulation\"\n",
+    "ios-config-16=\"crypto ipsec profile ipsec-vpn-aws\"\n",
+	  "ios-config-17=\"set pfs group2\"\n",
+	  "ios-config-18=\"set security-association lifetime seconds 3600\"\n",
+	  "ios-config-19=\"set transform-set ipsec-prop-vpn-aws\"\n",
+	  "ios-config-20=\"router bgp ", { "Ref" : "BgpAsn" },"\"\n",
+	  "ios-config-21=\"bgp log-neighbor-changes\"\n",
+	  "ios-config-22=\"ip vrf vpn0\"\n",
+	  "ios-config-23=\"rd ", { "Ref" : "BgpAsn" }, ":0\"\n",
+	  "ios-config-24=\"ip ssh pubkey-chain\"\n",
+	  "ios-config-25=\"username ", { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]}, "\"\n",
+	  "ios-config-26=\"key-hash ssh-rsa ", { "Fn::GetAtt" : [ "CreateRsaKey", "Fingerprint" ] },"\"\n",
+	  "ios-config-27=\"ip ssh server algorithm authentication publickey\"\n",
+	  "ios-config-28=\"ip ssh maxstartups 1\"\n"
         ]]}}
       }
     },
@@ -356,34 +357,35 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
 	  "ios-config-1=\"username ",
 	  { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]},
-	  " priv 15 pass ",
+	  " priv 15 algorithm-type sha256 secret ",
 	  { "Fn::GetAtt" : [ "CreateRandomPassword" , "Password" ] },"\"\n",
 	  "ios-config-2=\"service password-encryption\"\n",
 	  "ios-config-3=\"crypto isakmp policy 200\"\n",
-          "ios-config-4=\"encryption aes 128\"\n",
-          "ios-config-5=\"authentication pre-share\"\n",
+    "ios-config-4=\"encryption aes 128\"\n",
+    "ios-config-5=\"authentication pre-share\"\n",
 	  "ios-config-6=\"group 2\"\n",
-          "ios-config-7=\"lifetime 28800\"\n",
-          "ios-config-8=\"hash sha\"\n",
+    "ios-config-7=\"lifetime 28800\"\n",
+    "ios-config-8=\"hash sha\"\n",
 	  "ios-config-9=\"crypto ipsec transform-set ipsec-prop-vpn-aws esp-aes 128 esp-sha-hmac\"\n",
 	  "ios-config-10=\"mode tunnel\"\n",
 	  "ios-config-11=\"crypto ipsec df-bit clear\"\n",
-	  "ios-config-12=\"crypto isakmp keepalive 15 10 on-demand\"\n",
+    "ios-config-12=\"crypto isakmp keepalive 10 10 periodic\"\n",
 	  "ios-config-13=\"crypto ipsec security-association replay window-size 1024\"\n",
 	  "ios-config-14=\"crypto ipsec fragmentation before-encryption\"\n",
-	  "ios-config-15=\"crypto ipsec profile ipsec-vpn-aws\"\n",
-	  "ios-config-16=\"set pfs group2\"\n",
-	  "ios-config-17=\"set security-association lifetime seconds 3600\"\n",
-	  "ios-config-18=\"set transform-set ipsec-prop-vpn-aws\"\n",
-	  "ios-config-19=\"router bgp ", { "Ref" : "BgpAsn" },"\"\n",
-	  "ios-config-20=\"bgp log-neighbor-changes\"\n",
-	  "ios-config-21=\"ip vrf vpn0\"\n",
-	  "ios-config-22=\"rd ", { "Ref" : "BgpAsn" }, ":0\"\n",
-	  "ios-config-23=\"ip ssh pubkey-chain\"\n",
-	  "ios-config-24=\"username ", { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]}, "\"\n",
-	  "ios-config-25=\"key-hash ssh-rsa ", { "Fn::GetAtt" : [ "CreateRsaKey", "Fingerprint" ] },"\"\n",
-	  "ios-config-26=\"ip ssh server algorithm authentication publickey\"\n",
-	  "ios-config-27=\"ip ssh maxstartups 1\"\n"
+    "ios-config-15=\"no crypto ipsec nat-transparency udp-encapsulation\"\n",
+    "ios-config-16=\"crypto ipsec profile ipsec-vpn-aws\"\n",
+	  "ios-config-17=\"set pfs group2\"\n",
+	  "ios-config-18=\"set security-association lifetime seconds 3600\"\n",
+	  "ios-config-19=\"set transform-set ipsec-prop-vpn-aws\"\n",
+	  "ios-config-20=\"router bgp ", { "Ref" : "BgpAsn" },"\"\n",
+	  "ios-config-21=\"bgp log-neighbor-changes\"\n",
+	  "ios-config-22=\"ip vrf vpn0\"\n",
+	  "ios-config-23=\"rd ", { "Ref" : "BgpAsn" }, ":0\"\n",
+	  "ios-config-24=\"ip ssh pubkey-chain\"\n",
+	  "ios-config-25=\"username ", { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]}, "\"\n",
+	  "ios-config-26=\"key-hash ssh-rsa ", { "Fn::GetAtt" : [ "CreateRsaKey", "Fingerprint" ] },"\"\n",
+	  "ios-config-27=\"ip ssh server algorithm authentication publickey\"\n",
+	  "ios-config-28=\"ip ssh maxstartups 1\"\n"
         ]]}}
       }
     },
@@ -405,6 +407,16 @@
    },
     "SolutionHelperRolePolicy" : {
       "Type": "AWS::IAM::Policy",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "F4",
+              "reason": "This solution utilizes a solution helper function to support the creation/update/deletion of CWE for S3 and custom Lambda functions prior to the ability existing in CloudFormation natively. In order to support these provisioning activities, lambda:* and event:* permissions are required."
+            }
+          ]
+        }
+      },
       "Properties": {
 	  "Roles" : [ { "Ref" : "SolutionHelperRole" } ],
           "PolicyName": "Solution_Helper_Permissions",
@@ -678,7 +690,9 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "ec2:Describe*",
+                    "ec2:DescribeRegions",
+                    "ec2:DescribeVpnGateways",
+                    "ec2:DescribeVpnConnections",
                     "ec2:CreateTags",
                     "ec2:CreateCustomerGateway",
                     "ec2:DeleteCustomerGateway",

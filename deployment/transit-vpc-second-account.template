@@ -11,7 +11,7 @@
       "Description" : "S3 object prefix for storing VPN configuration.",
       "Type" : "String",
       "Default" : "vpnconfigs/",
-      "AllowedPattern": "^[a-z0-9A-Z_\/\\-\\.]*\/$"
+      "AllowedPattern": "^[a-zA-Z0-9_\\-/.]*/$"
     }
   },
   "Mappings" : {
@@ -60,7 +60,9 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "ec2:Describe*",
+                    "ec2:DescribeRegions",
+                    "ec2:DescribeVpnGateways",
+                    "ec2:DescribeVpnConnections",
                     "ec2:CreateTags",
                     "ec2:CreateCustomerGateway",
                     "ec2:DeleteCustomerGateway",
