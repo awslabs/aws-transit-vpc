@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description" : "(SO0001) - Transit VPC: This template creates a dedicated transit VPC with Cisco CSRs for routing traffic. ***NOTE*** You must first subscribe to the appropriate Cisco CSR marketplace BYOL or License Included AMI from the AWS Marketplace before you launch this template. Version 5",
+  "Description" : "a3d7-8de7709ee6d5::ed800345-c9a7-4eb5-b078-0093847507b5--(SO0001mp) - Transit VPC: This template creates a dedicated transit VPC with Cisco CSRs for routing traffic. ***NOTE*** You must first subscribe to the appropriate Cisco CSR marketplace BYOL or License Included AMI from the AWS Marketplace before you launch this template. Version 5",
 
   "Parameters" : {
     "KeyName" : {
@@ -56,12 +56,6 @@
       "Default" : "2x500Mbps",
       "AllowedValues" : [ "2x500Mbps","2x1Gbps", "2x2Gbps", "2x4.5Gbps" ]
     },
-    "LicenseModel" : {
-      "Description" : "Choose between BYOL (Bring Your Own License) and License Included license models. Remember to first subscribe the the appropriate Marketplace AMI!",
-      "Type" : "String",
-      "Default" : "LicenseIncluded",
-      "AllowedValues" : ["LicenseIncluded", "BYOL"]
-    },
     "S3Prefix" : {
       "Description" : "S3 prefix to append before S3 key names.",
       "Type" : "String",
@@ -95,7 +89,7 @@
      "ParameterGroups" : [
       {
         "Label" : { "default":"Cisco CSR Configuration" },
-        "Parameters" : [ "CSRType", "KeyName", "LicenseModel", "TerminationProtection" ]
+        "Parameters" : [ "CSRType", "KeyName", "TerminationProtection" ]
       },
       {
         "Label" : { "default":"AWS Service Configuration" },
@@ -123,7 +117,6 @@
       "CSRType" : { "default" : "CSR Throughput Requirements" },
       "KeyName" : { "default" : "SSH Key to access CSR" },
       "S3Prefix" : { "default" : "Prefix for S3 Objects" },
-      "LicenseModel" : { "default" : "License Model" },
       "TerminationProtection" : { "default" : "Enable Termination Protection" },
       "AccountId" : { "default" : "Additional AWS Account ID (Optional)" }
      }
@@ -159,24 +152,24 @@
       }
     },
     "CiscoCsrAMI" : {
-      "ap-south-1"    : { "BYOL": "ami-0126515024e181b2e", "LicenseIncluded": "ami-012e2d5a7048afe32" },
-      "eu-west-2"     : { "BYOL": "ami-008715176303d298e", "LicenseIncluded": "ami-04897b16faacdf48f" },
-      "eu-west-1"     : { "BYOL": "ami-028ff7f30065ad8b3", "LicenseIncluded": "ami-02884305a2b03b67b" },
-      "ap-northeast-2": { "BYOL": "ami-0ce275bb065baac48", "LicenseIncluded": "ami-0dd7ffc338c5cff83" },
-      "ap-northeast-1": { "BYOL": "ami-09b350fd64ff59865", "LicenseIncluded": "ami-0f3f43158fe8c96fc" },
-      "sa-east-1"     : { "BYOL": "ami-073b915fb28bbfde0", "LicenseIncluded": "ami-04827a919fc29f946" },
-      "ca-central-1"  : { "BYOL": "ami-0705ab01e69f78310", "LicenseIncluded": "ami-0bdc99b952d2b636a" },
-      "ap-southeast-1": { "BYOL": "ami-0544121f2f619b39c", "LicenseIncluded": "ami-0d00def253ffc9ffc" },
-      "ap-southeast-2": { "BYOL": "ami-0162e0ac136ed0666", "LicenseIncluded": "ami-009555db80b895499" },
-      "eu-central-1"  : { "BYOL": "ami-04f69c92dcce31453", "LicenseIncluded": "ami-0026dc643b0d77fc5" },
-      "us-east-2"     : { "BYOL": "ami-07f8094154b663213", "LicenseIncluded": "ami-00e56dab70688b964" },
-      "us-east-1"     : { "BYOL": "ami-0d8a2f539abbd5763", "LicenseIncluded": "ami-060450ca7a4170427" },
-      "us-west-1"     : { "BYOL": "ami-0cf71f2688b924e36", "LicenseIncluded": "ami-002666afb57bfa7d0" },
-      "us-west-2"     : { "BYOL": "ami-01d5fc08abef26bc5", "LicenseIncluded": "ami-0f102b51dcabbf7ae" }
+      "ap-south-1"    : { "BYOL": "ami-0126515024e181b2e" },
+      "eu-west-2"     : { "BYOL": "ami-008715176303d298e" },
+      "eu-west-1"     : { "BYOL": "ami-028ff7f30065ad8b3" },
+      "ap-northeast-2": { "BYOL": "ami-0ce275bb065baac48" },
+      "ap-northeast-1": { "BYOL": "ami-09b350fd64ff59865" },
+      "sa-east-1"     : { "BYOL": "ami-073b915fb28bbfde0" },
+      "ca-central-1"  : { "BYOL": "ami-0705ab01e69f78310" },
+      "ap-southeast-1": { "BYOL": "ami-0544121f2f619b39c" },
+      "ap-southeast-2": { "BYOL": "ami-0162e0ac136ed0666" },
+      "eu-central-1"  : { "BYOL": "ami-04f69c92dcce31453" },
+      "us-east-2"     : { "BYOL": "ami-07f8094154b663213" },
+      "us-east-1"     : { "BYOL": "ami-0d8a2f539abbd5763" },
+      "us-west-1"     : { "BYOL": "ami-0cf71f2688b924e36" },
+      "us-west-2"     : { "BYOL": "ami-01d5fc08abef26bc5" }
     },
     "CsrInstance" : {
       "2x500Mbps"   : { "Type" : "c4.large",   "Bandwidth" : "500000" },
-      "2x1Gbps"     : { "Type" : "c4.xlarge", "Bandwidth"  : "1000000" },
+      "2x1Gbps"     : { "Type" : "c4.xlarge",  "Bandwidth" : "1000000" },
       "2x2Gbps"     : { "Type" : "c4.2xlarge", "Bandwidth" : "2000000" },
       "2x4.5Gbps"   : { "Type" : "c4.4xlarge", "Bandwidth" : "4500000" }
     },
@@ -384,7 +377,7 @@
         "InstanceType" : { "Fn::FindInMap" : [ "CsrInstance", { "Ref" : "CSRType" }, "Type"] },
         "KeyName" : { "Ref" : "KeyName" },
         "DisableApiTermination" : {"Fn::If": ["EnableTerm", true, false ]},
-        "ImageId"        : { "Fn::FindInMap" : [ "CiscoCsrAMI", { "Ref" : "AWS::Region" }, { "Ref" : "LicenseModel" } ] },
+        "ImageId"        : { "Fn::FindInMap" : [ "CiscoCsrAMI", { "Ref" : "AWS::Region" }, "BYOL" ] },
         "SubnetId" : { "Ref" : "VPCPubSub1" },
         "SecurityGroupIds" : [{ "Ref" : "CSRSecurityGroup" }],
         "Tags" : [
@@ -395,17 +388,17 @@
 	  { "Fn::FindInMap" : [ "Function", "Csr", "UserName"]},
 	  " priv 15 algorithm-type sha256 secret ",
 	  { "Fn::GetAtt" : [ "CreateRandomPassword" , "Password" ] },"\"\n",
-	  "ios-config-2=\"service password-encryption\"\n",
-	  "ios-config-3=\"crypto isakmp policy 200\"\n",
+    "ios-config-2=\"service password-encryption\"\n",
+    "ios-config-3=\"crypto isakmp policy 200\"\n",
     "ios-config-4=\"encryption aes 128\"\n",
     "ios-config-5=\"authentication pre-share\"\n",
-	  "ios-config-6=\"group 2\"\n",
+    "ios-config-6=\"group 2\"\n",
     "ios-config-7=\"lifetime 28800\"\n",
     "ios-config-8=\"hash sha\"\n",
 	  "ios-config-9=\"crypto ipsec transform-set ipsec-prop-vpn-aws esp-aes 128 esp-sha-hmac\"\n",
 	  "ios-config-10=\"mode tunnel\"\n",
 	  "ios-config-11=\"crypto ipsec df-bit clear\"\n",
-	  "ios-config-12=\"crypto isakmp keepalive 10 10 periodic\"\n",
+    "ios-config-12=\"crypto isakmp keepalive 10 10 periodic\"\n",
 	  "ios-config-13=\"crypto ipsec security-association replay window-size 1024\"\n",
 	  "ios-config-14=\"crypto ipsec fragmentation before-encryption\"\n",
     "ios-config-15=\"no crypto ipsec nat-transparency udp-encapsulation\"\n",
@@ -434,9 +427,9 @@
         "InstanceType" : { "Fn::FindInMap" : [ "CsrInstance", { "Ref" : "CSRType" }, "Type"] },
         "KeyName" : { "Ref" : "KeyName" },
         "DisableApiTermination" : {"Fn::If": ["EnableTerm", true, false ]},
-        "ImageId"        : { "Fn::FindInMap" : [ "CiscoCsrAMI", { "Ref" : "AWS::Region" }, { "Ref" : "LicenseModel" } ] },
+        "ImageId"        : { "Fn::FindInMap" : [ "CiscoCsrAMI", { "Ref" : "AWS::Region" }, "BYOL" ] },
         "SubnetId" : { "Ref" : "VPCPubSub2" },
-        "SecurityGroupIds" : [{ "Ref" : "CSRSecurityGroup" }],
+	"SecurityGroupIds" : [{ "Ref" : "CSRSecurityGroup" }],
         "Tags" : [
           { "Key" : "Name", "Value" : "Transit VPC CSR2" }
         ],
@@ -447,15 +440,15 @@
 	  { "Fn::GetAtt" : [ "CreateRandomPassword" , "Password" ] },"\"\n",
 	  "ios-config-2=\"service password-encryption\"\n",
 	  "ios-config-3=\"crypto isakmp policy 200\"\n",
-    "ios-config-4=\"encryption aes 128\"\n",
-    "ios-config-5=\"authentication pre-share\"\n",
+  	"ios-config-4=\"encryption aes 128\"\n",
+  	"ios-config-5=\"authentication pre-share\"\n",
 	  "ios-config-6=\"group 2\"\n",
-    "ios-config-7=\"lifetime 28800\"\n",
-    "ios-config-8=\"hash sha\"\n",
+  	"ios-config-7=\"lifetime 28800\"\n",
+  	"ios-config-8=\"hash sha\"\n",
 	  "ios-config-9=\"crypto ipsec transform-set ipsec-prop-vpn-aws esp-aes 128 esp-sha-hmac\"\n",
 	  "ios-config-10=\"mode tunnel\"\n",
 	  "ios-config-11=\"crypto ipsec df-bit clear\"\n",
-	  "ios-config-12=\"crypto isakmp keepalive 10 10 periodic\"\n",
+    "ios-config-12=\"crypto isakmp keepalive 10 10 periodic\"\n",
 	  "ios-config-13=\"crypto ipsec security-association replay window-size 1024\"\n",
 	  "ios-config-14=\"crypto ipsec fragmentation before-encryption\"\n",
     "ios-config-15=\"no crypto ipsec nat-transparency udp-encapsulation\"\n",
@@ -532,7 +525,7 @@
 		    "events:*",
 		    "ec2:DescribeSecurityGroups",
 		    "ec2:DescribeSubnets",
-	            "ec2:DescribeVpcs"
+	      "ec2:DescribeVpcs"
 		  ],
 		  "Resource": "*"
 		},
@@ -936,7 +929,7 @@
                 "{ 'Solution' : '", "SO0001", "', ",
                   "'UUID' : '", {"Fn::GetAtt": ["CreateUniqueID", "UUID"]}, "', ",
                   "'Data': {", "'CSRType': '", {"Ref": "CSRType"}, "',",
-                               "'LicenseModel': '", {"Ref": "LicenseModel"}, "',",
+                               "'LicenseModel': 'BYOL',",
                                "'TerminationProtection': '", {"Ref": "TerminationProtection"}, "',",
                                "'CreateVPC': 'Yes',",
                                "'SendAnonymousData': '", { "Fn::FindInMap" : [ "Send", "AnonymousUsage", "Data"]}, "'",
