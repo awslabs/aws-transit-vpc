@@ -251,6 +251,7 @@ def lambda_handler(event, context):
                 log.info("Cleaned up %s since it has no VPN connections left", vpn['CustomerGatewayId'])
             except:
                 log.debug("%s still has existing VPN connections", vpn['CustomerGatewayId'])
+            processed_vgw = True
             sendAnonymousData(config, vgwTags, region_id, 1)
 
       # if a VGW has been processed, then we need to break out of VGW processing
@@ -259,3 +260,52 @@ def lambda_handler(event, context):
     # if a VGW has been processed, then we need to break out of region processing
     if processed_vgw:
       break
+
+  #If no VGW has been processed in any region this cycle, then check for orphaned VPN configs
+  if not processed_vgw:
+      ec2=boto3.client('ec2',region_name=os.environ['AWS_DEFAULT_REGION'])
+      vpns=ec2.describe_vpn_connections(Filters=[
+          {'Name':'state','Values':['available','pending','deleting']},
+          {'Name':'tag:'+config['HUB_TAG'],'Values':[config['HUB_TAG_VALUE']]}
+      ])
+      #Make sure we don't proceed if describe returned no connections but didn't throw an error
+      if 'VpnConnections' in vpns and vpns['VpnConnections']:
+          for csrNum in ['1','2']:
+            #Make sure we only check for orphans from the account running the designated CSR
+            csr_addresses = ec2.describe_addresses(
+                Filters = [{'Name':'public-ip', 'Values':[config['EIP'+csrNum]]}]
+            )
+            if not 'Addresses' in csr_addresses or not csr_addresses['Addresses']:
+                continue
+            csr_instance_owner = csr_addresses['Addresses'][0]['NetworkInterfaceOwnerId']
+            lambda_owner = context.invoked_function_arn.split(":")[4]
+            if csr_instance_owner == lambda_owner:
+                log.info('CSR%s is local to this lambda, checking for orphaned VPN configs', csrNum)
+                vpn_config_prefix=bucket_prefix+'CSR'+csrNum+'/'
+                vpn_configs = s3.list_objects_v2(
+                    Bucket=bucket_name,
+                    Prefix=vpn_config_prefix
+                )
+                #Get the list of configs from S3, and match against known VPN connections
+                if 'Contents' in vpn_configs:
+                    for vpn_config in vpn_configs['Contents']:
+                        m = re.search(r'(?P<ID>vpn-.+)\.conf$', vpn_config['Key'])
+                        if m:
+                            vpn_connection_id=m.group('ID')
+                            if any (x['VpnConnectionId'] == vpn_connection_id for x in vpns['VpnConnections']):
+                                log.debug('VPN Connection found for %s', vpn_config['Key'])
+                            else:
+                                log.warning('Setting orphan VPN config %s to delete', vpn_config['Key'])
+                                #Read in the config and change status
+                                config_orphan=s3.get_object(Bucket=bucket_name,Key=vpn_config['Key'])
+                                xmldoc=minidom.parseString(config_orphan['Body'].read())
+                                xmldoc.getElementsByTagName("status")[0].firstChild.data = 'delete'
+                                #Save the new config
+                                s3.put_object(
+                                    Body=str.encode(str(xmldoc.toxml())),
+                                    Bucket=bucket_name,
+                                    Key=vpn_config['Key'],
+                                    ACL='bucket-owner-full-control',
+                                    ServerSideEncryption='aws:kms',
+                                    SSEKMSKeyId=config['KMS_KEY']
+                                )
