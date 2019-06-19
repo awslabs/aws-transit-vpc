@@ -85,7 +85,10 @@
   "Conditions" : {
     "AuthorizeAnotherAccount" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref": "AccountId"}, "" ]} ]},
     "CreateS3Endpoint" : {"Fn::Equals" : [{"Ref" : "CreateVPCEndpoint"}, "Yes"]},
-    "EnableTerm" : {"Fn::Equals" : [{"Ref" : "TerminationProtection"}, "Yes"]}
+    "EnableTerm" : {"Fn::Equals" : [{"Ref" : "TerminationProtection"}, "Yes"]},
+    "NewRegionTrue": {
+      "Fn::Equals" : [{ "Ref": "AWS::Region" }, "eu-west-3"]
+    }
   },
   "Metadata" : {
     "AWS::CloudFormation::Interface" : {
@@ -124,23 +127,33 @@
   },
   "Mappings" : {
     "Function" : {
+      "SolutionHelper" : {
+        "S3Bucket" : "%%BUCKET_NAME%%",
+	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-solution-helper.zip",
+        "Name" : "transit-vpc-solution-helper",
+        "Handler": "transit_vpc_solution_helper/transit-vpc-solution-helper.lambda_handler",
+        "Description": "Transit VPC: This function is invoked for custom resources.",
+        "Runtime": "python3.7",
+        "Timeout": "60",
+        "MemorySize": "128"
+      },
       "Configurator" : {
         "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/latest/transit-vpc-push-cisco-config.zip",
+	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-push-cisco-config.zip",
         "Name" : "cisco-configurator",
         "Handler": "transit_vpc_push_cisco_config/lambda_function.lambda_handler",
         "Description": "Transit VPC: This function is invoked when a generic VPN configuration is placed in an S3 bucket - it converts the generic information into Cisco IOS specific commands and pushes the config to transit VPC routers.",
-        "Runtime": "python2.7",
+        "Runtime": "python3.7",
         "Timeout": "300",
         "MemorySize": "128"
       },
       "Poller" : {
         "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/latest/transit-vpc-poller.zip",
+	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-poller.zip",
         "Name" : "vgw-poller",
         "Handler": "transit-vpc-poller.lambda_handler",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
-        "Runtime": "python2.7",
+        "Runtime": "python3.7",
         "Timeout": "120",
         "MemorySize": "128"
       },
@@ -153,6 +166,7 @@
     },
     "CiscoCsrAMI" : {
       "ap-south-1"    : { "BYOL": "ami-0126515024e181b2e", "LicenseIncluded": "ami-012e2d5a7048afe32" },
+      "eu-west-3"     : { "BYOL": "ami-030690944026827fc", "LicenseIncluded": "ami-028e6b1defb1f3071" },
       "eu-west-2"     : { "BYOL": "ami-008715176303d298e", "LicenseIncluded": "ami-04897b16faacdf48f" },
       "eu-west-1"     : { "BYOL": "ami-028ff7f30065ad8b3", "LicenseIncluded": "ami-02884305a2b03b67b" },
       "ap-northeast-2": { "BYOL": "ami-0ce275bb065baac48", "LicenseIncluded": "ami-0dd7ffc338c5cff83" },
@@ -172,6 +186,12 @@
       "2x1Gbps"     : { "Type" : "c4.xlarge", "Bandwidth"  : "1000000" },
       "2x2Gbps"     : { "Type" : "c4.2xlarge", "Bandwidth" : "2000000" },
       "2x4.5Gbps"   : { "Type" : "c4.4xlarge", "Bandwidth" : "4500000" }
+    },
+    "CsrInstanceForNewRegion" : {
+      "2x500Mbps"   : { "Type" : "c5.large",   "Bandwidth" : "500000" },
+      "2x1Gbps"     : { "Type" : "c5.xlarge", "Bandwidth"  : "1000000" },
+      "2x2Gbps"     : { "Type" : "c5.2xlarge", "Bandwidth" : "2000000" },
+      "2x4.5Gbps"   : { "Type" : "c5.4xlarge", "Bandwidth" : "4500000" }
     },
     "Send" : {
       "AnonymousUsage" : { "Data" : "Yes" }
@@ -295,7 +315,13 @@
         "Comment1" : "Launch Cisco CSR1"
       },
       "Properties" : {
-        "InstanceType" : { "Fn::FindInMap" : [ "CsrInstance", { "Ref" : "CSRType" }, "Type"] },
+        "InstanceType" : {
+            "Fn::If" : [
+                "NewRegionTrue",
+                { "Fn::FindInMap" : [ "CsrInstanceForNewRegion", { "Ref" : "CSRType" }, "Type"] },
+                { "Fn::FindInMap" : [ "CsrInstance", { "Ref" : "CSRType" }, "Type"] }
+            ]
+        },
         "KeyName" : { "Ref" : "KeyName" },
         "DisableApiTermination" : {"Fn::If": ["EnableTerm", true, false ]},
         "ImageId"        : { "Fn::FindInMap" : [ "CiscoCsrAMI", { "Ref" : "AWS::Region" }, { "Ref" : "LicenseModel" } ] },
@@ -345,8 +371,13 @@
         "Comment1" : "Launch Cisco CSR2"
       },
       "Properties" : {
-        "InstanceType" : { "Fn::FindInMap" : [ "CsrInstance", { "Ref" : "CSRType" }, "Type"] },
-        "KeyName" : { "Ref" : "KeyName" },
+        "InstanceType" : {
+            "Fn::If" : [
+                "NewRegionTrue",
+                { "Fn::FindInMap" : [ "CsrInstanceForNewRegion", { "Ref" : "CSRType" }, "Type"] },
+                { "Fn::FindInMap" : [ "CsrInstance", { "Ref" : "CSRType" }, "Type"] }
+            ]
+        },        "KeyName" : { "Ref" : "KeyName" },
         "DisableApiTermination" : {"Fn::If": ["EnableTerm", true, false ]},
         "ImageId"        : { "Fn::FindInMap" : [ "CiscoCsrAMI", { "Ref" : "AWS::Region" }, { "Ref" : "LicenseModel" } ] },
         "SubnetId" : { "Ref" : "VPCPubSub2" },
@@ -477,19 +508,21 @@
         }
       }
    },
-    "SolutionHelper": {
+   "SolutionHelper": {
       "Type": "AWS::Lambda::Function",
       "DependsOn" : "SolutionHelperRolePolicy",
       "Properties": {
-      	"Handler": "solution-helper.lambda_handler",
+        "FunctionName" : { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" }, { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Name"]}	]] },
+      	"Handler": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Handler"] },
       	"Role": { "Fn::GetAtt" : [ "SolutionHelperRole" , "Arn" ] },
-        "Description": "Transit VPC: CloudFormation custom resource function invoked during transit VPC CloudFormation create, update, and delete stack operations.",
-      	"Code": {
-      	  "S3Bucket": { "Fn::Join": ["", ["solutions-", {"Ref" : "AWS::Region"}]] },
-      	  "S3Key": "library/solution-helper/v3/solution-helper.zip"
-      	},
-      	"Runtime": "python2.7",
-      	"Timeout": "60"
+        "Description": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Description"]},
+        "Code": {
+          "S3Bucket": { "Fn::Join": ["", [ { "Fn::FindInMap" : [ "Function", "SolutionHelper", "S3Bucket"]}, "-", {"Ref": "AWS::Region"} ]] },
+          "S3Key": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "S3Key"]}
+        },
+      	"Runtime": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Runtime"] },
+        "MemorySize": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "MemorySize"] },
+      	"Timeout": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Timeout"] }
      }
    },
    "CreateRsaKey": {

@@ -19,11 +19,11 @@ sudo pip install --upgrade virtualenv
 ## Building Lambda Package
 ```bash
 cd deployment
-./build-s3-dist.sh source-bucket-base-name
+./build-s3-dist.sh source-bucket-base-name version-name
 ```
 source-bucket-base-name should be the base name for the S3 bucket location where the template will source the Lambda code from.
 The template will append '-[region_name]' to this value.
-For example: ./build-s3-dist.sh solutions
+For example: ./build-s3-dist.sh solutions v1.0.0
 The template will then expect the source code to be located in the solutions-[region_name] bucket
 
 ## CF template and Lambda function

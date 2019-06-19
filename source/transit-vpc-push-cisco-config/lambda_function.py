@@ -35,6 +35,7 @@ endpoint_url = {
   "us-west-2" : "https://s3-us-west-2.amazonaws.com",
   "eu-west-1" : "https://s3-eu-west-1.amazonaws.com",
   "eu-west-2" : "https://s3-eu-west-2.amazonaws.com",
+  "eu-west-3" : "https://s3-eu-west-3.amazonaws.com",
   "eu-central-1" : "https://s3-eu-central-1.amazonaws.com",
   "ca-central-1" : "https://s3-ca-central-1.amazonaws.com",
   "ap-northeast-1" : "https://s3-ap-northeast-1.amazonaws.com",
@@ -49,7 +50,7 @@ endpoint_url = {
 def prompt(chan):
     buff = ''
     while not buff.endswith('#'):
-        resp = chan.recv(9999)
+        resp = chan.recv(9999).decode('utf-8')
         buff += resp
         #log.debug("%s",resp)
     return buff
@@ -138,7 +139,8 @@ def getTransitConfig(bucket_name, bucket_prefix, s3_url, config_file):
     s3=boto3.client('s3', endpoint_url=s3_url,
       config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
     log.info("Downloading config file: %s/%s/%s%s", s3_url, bucket_name, bucket_prefix,config_file)
-    return ast.literal_eval(s3.get_object(Bucket=bucket_name,Key=bucket_prefix+config_file)['Body'].read())
+    config_string = s3.get_object(Bucket=bucket_name,Key=bucket_prefix+config_file)['Body'].read().decode('utf-8')
+    return ast.literal_eval(config_string)
 
 #Logic to upload a new/updated transit VPC configuration file to S3 (not currently used)
 def putTransitConfig(bucket_name, bucket_prefix, s3_url, config_file, config):
@@ -281,7 +283,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
         config_text.append('  keyring keyring-{}-{}'.format(vpn_connection_id,tunnelId))
         config_text.append('exit')
         config_text.append('interface Tunnel{}'.format(tunnelId))
-	config_text.append('  description {} from {} to {} for account {}'.format(vpn_connection_id, vpn_gateway_id, customer_gateway_id, account_id))
+        config_text.append('  description {} from {} to {} for account {}'.format(vpn_connection_id, vpn_gateway_id, customer_gateway_id, account_id))
         config_text.append('  ip vrf forwarding {}'.format(vpn_connection_id))
         config_text.append('  ip address {} 255.255.255.252'.format(customer_gateway_tunnel_inside_address_ip_address))
         config_text.append('  ip virtual-reassembly')

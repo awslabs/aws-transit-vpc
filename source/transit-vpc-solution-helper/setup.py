@@ -9,17 +9,16 @@ except ImportError: # for pip <= 9.0.3
     from pip.req import parse_requirements
 
 setup(
-    name='transit_vpc_push_cisco_config',
-    version='2.0',
-    description='AWS Transit VPC Push Cisco Config',
+    name='transit_vpc_solution_helper',
+    version='1.0',
+    description='AWS Transit VPC Custom Resource',
     author='AWS Solutions Builder',
     license='ASL',
     zip_safe=False,
-    packages=['transit_vpc_push_cisco_config'],
-    package_dir={'transit_vpc_push_cisco_config': '.'},
+    packages=['transit_vpc_solution_helper', 'pycfn_custom_resource'],
+    package_dir={'transit_vpc_solution_helper': '.', 'pycfn_custom_resource' : './pycfn_custom_resource'},
     install_requires=[
-        'paramiko>=1.16.0',
-        'transit_vpc_push_cisco_config>=2.0'
+        'paramiko>=1.16.0'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.7',

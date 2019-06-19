@@ -18,11 +18,11 @@
     "Function" : {
       "Poller" : {
         "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/latest/transit-vpc-poller.zip",
+	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-poller.zip",
         "Name" : "vgw-poller",
         "Handler": "transit-vpc-poller.lambda_handler",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
-        "Runtime": "python2.7",
+        "Runtime": "python3.7",
         "Timeout": "120",
         "MemorySize": "128"
       }
