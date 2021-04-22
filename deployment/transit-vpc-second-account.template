@@ -12,13 +12,17 @@
       "Type" : "String",
       "Default" : "vpnconfigs/",
       "AllowedPattern": "^[a-zA-Z0-9_\\-/.]*/$"
+    },
+    "KMSKeyARN" : {
+      "Description" : "Key ARN for the KMS Key created by the primary stack. Example - arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+      "Type" : "String"
     }
   },
   "Mappings" : {
     "Function" : {
       "Poller" : {
-        "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-poller.zip",
+        "S3Bucket" : "%DIST_OUTPUT_BUCKET%",
+	      "S3Key" : "%SOLUTION_NAME%/%VERSION%/transit-vpc-poller.zip",
         "Name" : "vgw-poller",
         "Handler": "transit-vpc-poller.lambda_handler",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
@@ -43,7 +47,7 @@
           } ]
         },
         "Path": "/",
-          "Policies": [ {
+          "Policies": [{
             "PolicyName": "My_Lambda_Function_Permissions",
             "PolicyDocument": {
               "Version" : "2012-10-17",
@@ -60,38 +64,53 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "ec2:DescribeRegions",
-                    "ec2:DescribeVpnGateways",
-                    "ec2:DescribeVpnConnections",
-                    "ec2:CreateTags",
-                    "ec2:CreateCustomerGateway",
-                    "ec2:DeleteCustomerGateway",
-                    "ec2:CreateVpnConnection",
-                    "ec2:DeleteVpnConnection"
+            "ec2:CreateTags",
+            "ec2:CreateCustomerGateway",
+            "ec2:DeleteCustomerGateway",
+            "ec2:CreateVpnConnection",
+            "ec2:DeleteVpnConnection"
+		  ],
+		  "Resource": { "Fn::Join" : ["", ["arn:",{"Ref": "AWS::Partition"},":ec2:*:",{ "Ref" : "AWS::AccountId" }, ":*/*" ]]}
+        },
+        {
+		  "Effect": "Allow",
+		  "Action": [
+            "ec2:DescribeRegions",
+            "ec2:DescribeVpnGateways",
+            "ec2:DescribeVpnConnections"
 		  ],
 		  "Resource": "*"
-	        },
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "kms:Decrypt",
-                    "kms:GenerateDataKey*",
-                    "kms:Encrypt"
-                  ],
-                  "Resource": "*"
-                },
+        },
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "s3:PutObject",
-                    "s3:PutObjectAcl",
-                    "s3:GetObject"
+            "s3:PutObject",
+            "s3:PutObjectAcl",
+            "s3:GetObject"
 		  ],
 		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "BucketName" }, "/", {"Ref": "BucketPrefix"}, "*" 	]] }
-	       }
-	     ]
-          }
-        } ]
+        },
+        {
+		  "Effect": "Allow",
+		  "Action": [
+            "kms:Decrypt",
+            "kms:GenerateDataKey*",
+            "kms:Encrypt"
+		  ],
+		  "Resource": { "Ref": "KMSKeyARN" }
+        }
+          ]}
+        }]
+      },
+     "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "Resource * is needed to describe and create vpn connections, regions, tags, customer gateways"
+            }
+          ]
+        }
       }
     },
     "PollerFunction": {
@@ -116,8 +135,24 @@
             "BUCKET_NAME": { "Ref" : "BucketName" },
             "BUCKET_PREFIX": { "Ref" : "BucketPrefix" },
             "CONFIG_FILE": "transit_vpc_config.txt",
-            "LOG_LEVEL":"INFO"
+            "LOG_LEVEL":"INFO",
+            "USER_AGENT_STRING": "AwsSolution/SO0001/%VERSION%"
+
           }
+        }
+      },
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This lambda function does not need access to VPC resources"
+            },
+            {
+              "id": "W92",
+              "reason": "This use case does not need to set the ReservedConcurrentExecutions"
+            }
+          ]
         }
       }
     },

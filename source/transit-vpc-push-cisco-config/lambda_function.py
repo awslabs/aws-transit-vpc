@@ -1,10 +1,10 @@
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
+#  Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
 #                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
+#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
 #  with the License. A copy of the License is located at                                                             #
 #                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
+#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
 #                                                                                                                    #
 #  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
@@ -27,6 +27,8 @@ log = logging.getLogger()
 log.setLevel(log_level)
 
 config_file=str(os.environ.get('CONFIG_FILE'))
+USER_AGENT_STRING = os.environ['USER_AGENT_STRING']
+
 #These S3 endpoint URLs are provided to support VPC endpoints for S3 in regions such as Frankfort that require explicit region endpoint definition
 endpoint_url = {
   "us-east-1" : "https://s3.amazonaws.com",
@@ -137,7 +139,7 @@ def getBucketPrefix(bucket_name, bucket_key):
 #Logic to download the transit VPC configuration file from S3
 def getTransitConfig(bucket_name, bucket_prefix, s3_url, config_file):
     s3=boto3.client('s3', endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
     log.info("Downloading config file: %s/%s/%s%s", s3_url, bucket_name, bucket_prefix,config_file)
     config_string = s3.get_object(Bucket=bucket_name,Key=bucket_prefix+config_file)['Body'].read().decode('utf-8')
     return ast.literal_eval(config_string)
@@ -145,7 +147,7 @@ def getTransitConfig(bucket_name, bucket_prefix, s3_url, config_file):
 #Logic to upload a new/updated transit VPC configuration file to S3 (not currently used)
 def putTransitConfig(bucket_name, bucket_prefix, s3_url, config_file, config):
     s3=boto3.client('s3', endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
     log.info("Uploading new config file: %s/%s/%s%s", s3_url,bucket_name, bucket_prefix,config_file)
     s3.put_object(Bucket=bucket_name,Key=bucket_prefix+config_file,Body=str(config))
 
@@ -154,7 +156,7 @@ def downloadPrivateKey(bucket_name, bucket_prefix, s3_url, prikey):
     if os.path.exists('/tmp/'+prikey):
         os.remove('/tmp/'+prikey)
     s3=boto3.client('s3', endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
     log.info("Downloading private key: %s/%s/%s%s",s3_url, bucket_name, bucket_prefix, prikey)
     s3.download_file(bucket_name,bucket_prefix+prikey, '/tmp/'+prikey)
 
@@ -164,7 +166,7 @@ def create_cisco_config(bucket_name, bucket_key, s3_url, bgp_asn, ssh):
 
     #Download the VPN configuration XML document
     s3=boto3.client('s3',endpoint_url=s3_url,
-      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4'))
+      config=Config(s3={'addressing_style': 'virtual'}, signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
     config=s3.get_object(Bucket=bucket_name,Key=bucket_key)
 
     xmldoc=minidom.parseString(config['Body'].read())

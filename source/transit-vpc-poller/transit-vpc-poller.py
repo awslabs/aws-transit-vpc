@@ -1,10 +1,10 @@
 ######################################################################################################################
-#  Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
+#  Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
 #                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
+#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
 #  with the License. A copy of the License is located at                                                             #
 #                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
+#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
 #                                                                                                                    #
 #  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
@@ -29,7 +29,7 @@ log.setLevel(log_level)
 bucket_name=str(os.environ.get('BUCKET_NAME'))
 bucket_prefix=str(os.environ.get('BUCKET_PREFIX'))
 config_file=str(os.environ.get('CONFIG_FILE'))
-
+USER_AGENT_STRING = os.environ['USER_AGENT_STRING']
 #VGW tags come in the format of [{"Key": "Tag1", "Value":"Tag1value"},{"Key":"Tag2","Value":"Tag2value"}]
 #This function converts the array of Key/Value dicts to a single tag dictionary
 def getTags(vgwTags):
@@ -110,7 +110,7 @@ def lambda_handler(event, context):
     #Figure out the account number by parsing this function's ARN
     account_id = re.findall(':(\d+):', context.invoked_function_arn)[0]
     #Retrieve Transit VPC configuration from transit_vpn_config.txt
-    s3=boto3.client('s3', config=Config(signature_version='s3v4', user_agent='transit-vpc-s3'))
+    s3=boto3.client('s3', config=Config(signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
     log.info('Getting config file %s/%s%s',bucket_name, bucket_prefix, config_file)
     config_string = s3.get_object(Bucket=bucket_name,Key=bucket_prefix+config_file)['Body'].read().decode('utf-8')
     config=ast.literal_eval(config_string)
@@ -119,7 +119,7 @@ def lambda_handler(event, context):
     # use this variable to determine if a VGW has been processed so we will only process one VGW per run (one per minute)
     processed_vgw = False
     #Get list of regions so poller can look for VGWs in all regions
-    ec2=boto3.client('ec2',region_name='us-east-1',config=Config(user_agent='transit-vpc-ec2-describe-regions'))
+    ec2=boto3.client('ec2',region_name='us-east-1',config=Config(user_agent_extra=USER_AGENT_STRING))
 
     regions=ec2.describe_regions()
     for region in regions['Regions']:
@@ -127,7 +127,7 @@ def lambda_handler(event, context):
       region_id=region['RegionName']
       log.debug('Checking region: %s',region_id)
       #Create EC2 connection to this region to get list of VGWs
-      ec2=boto3.client('ec2',region_name=region_id,config=Config(user_agent='transit-vpc-ec2-{}'.format(region_id)))
+      ec2=boto3.client('ec2',region_name=region_id,config=Config(user_agent_extra=USER_AGENT_STRING))
       #Get list of VGWs that are available and tagged for Transit VPC
       #vgws=ec2.describe_vpn_gateways(Filters=[
       #  {'Name':'state','Values':['available', 'attached', 'detached']},

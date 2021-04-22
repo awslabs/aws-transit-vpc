@@ -48,7 +48,11 @@
      }
     }
   },
-
+  "Mappings" : {
+    "LogRetention" : {
+      "Period" : { "Days" : 90 }
+    }
+  },
   "Resources" : {
     "SpokeVPC" : {
       "Type" : "AWS::EC2::VPC",
@@ -68,7 +72,9 @@
           { "Key" : { "Ref" : "PreferredPathTag" }, "Value" : { "Ref" : "PreferredPathValue" }},
           { "Key" : { "Ref" : "SpokeTag" }, "Value" : { "Ref" : "SpokeTagValue" }}
         ]
-      }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "AttachVGWToVPC" : {
        "Type" : "AWS::EC2::VPCGatewayAttachment",
@@ -94,7 +100,103 @@
         "RouteTableIds" : [ { "Ref" : "VPCRouteTable" } ],
         "VpnGatewayId" : { "Ref" : "VGW" }
       }
+    },
+    "FlowLog": {
+      "Type": "AWS::EC2::FlowLog",
+      "Properties": {
+        "ResourceId": {
+          "Ref": "SpokeVPC"
+        },
+        "ResourceType": "VPC",
+        "TrafficType": "ALL",
+        "DeliverLogsPermissionArn": {
+          "Fn::GetAtt": [
+            "RoleFlowLogs",
+            "Arn"
+          ]
+        },
+        "LogGroupName": {
+          "Ref": "AWS::StackName"
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "RoleFlowLogs": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "vpc-flow-logs.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "FlowLogPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup",
+                "logs:DescribeLogGroups"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "LogGroupFlowLogs",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "FlowLogPolicy",
+        "Roles": [
+          {
+            "Ref": "RoleFlowLogs"
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "LogGroupFlowLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "AWS::StackName"
+        },
+        "RetentionInDays": { "Fn::FindInMap" : [ "LogRetention", "Period", "Days"]}
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W84",
+              "reason": "CloudWatch logs are encrypted by the service"
+            }
+          ]
+        }
+      }
     }
+
   },
   "Outputs" : {
     "VPCID" : {

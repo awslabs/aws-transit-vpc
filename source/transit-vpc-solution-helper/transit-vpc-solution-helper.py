@@ -1,10 +1,10 @@
 ######################################################################################################################
-#  Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
+#  Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
 #                                                                                                                    #
-#  Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance        #
+#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
 #  with the License. A copy of the License is located at                                                             #
 #                                                                                                                    #
-#      http://aws.amazon.com/asl/                                                                                    #
+#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
 #                                                                                                                    #
 #  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
@@ -31,11 +31,12 @@ import re
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
+USER_AGENT_STRING = os.environ['USER_AGENT_STRING']
 
 # Function to create an S3 bucket event to invoke the new Lambda Function
-def createS3Event(FunctName, S3Event):
+def createS3Event(FunctName, S3Event, AccountId):
     try:
-        funct = boto3.client('lambda')
+        funct = boto3.client('lambda', config=Config(user_agent_extra=USER_AGENT_STRING))
         try:
             response = funct.remove_permission(FunctionName=FunctName, StatementId='S3Events_' + FunctName)
         except Exception as e:
@@ -46,9 +47,11 @@ def createS3Event(FunctName, S3Event):
             StatementId='S3Events_' + FunctName,
             Action='lambda:InvokeFunction',
             Principal='s3.amazonaws.com',
-            SourceArn="arn:aws:s3:::" + S3Event['Bucket']
+            SourceArn="arn:aws:s3:::" + S3Event['Bucket'],
+            SourceAccount=AccountId
+
         )
-        s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+        s3 = boto3.client('s3', config=Config(signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
         response = s3.put_bucket_notification_configuration(
             Bucket=S3Event['Bucket'],
             NotificationConfiguration=S3Event['EventPattern']
@@ -64,7 +67,7 @@ def StoreInS3(S3Info):
         log.debug("Storing all this data in S3: %s.", S3Info)
         for S3Object in S3Info:
             # log.error("Storing requested data in S3: %s.", S3Object)
-            s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+            s3 = boto3.client('s3', config=Config(signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
             response = s3.put_object(
                 Bucket=S3Object['Bucket'],
                 Key=S3Object['Key'],
@@ -83,7 +86,7 @@ def StoreInS3KMS(S3Info):
         log.debug("Storing all this data in S3: %s.", S3Info)
         for S3Object in S3Info:
             # log.debug("Storing requested data in S3: %s.", S3Object)
-            s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+            s3 = boto3.client('s3', config=Config(signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
             response = s3.put_object(
                 Bucket=S3Object['Bucket'],
                 Key=S3Object['Key'],
@@ -185,6 +188,7 @@ class myCustomResource(CustomResource):
             CreateRandomPassword = self._resourceproperties.get('CreateRandomPassword')
             CreateUniqueID = self._resourceproperties.get('CreateUniqueID')
             SendData = self._resourceproperties.get('SendAnonymousData')
+            AccountId = self._resourceproperties.get('AccountId')
             response = None
 
             if S3Event is not None:
@@ -192,7 +196,7 @@ class myCustomResource(CustomResource):
                 S3Event = ast.literal_eval(S3Event)
                 if FunctArn is not None:
                     S3Event['EventPattern']['LambdaFunctionConfigurations'][0]['LambdaFunctionArn'] = FunctArn
-                createS3Event(FunctName, S3Event)
+                createS3Event(FunctName, S3Event, AccountId)
 
             if S3StoreKMS is not None:
                 log.debug("Create S3StoreKMS: %s", S3StoreKMS)
@@ -251,13 +255,14 @@ class myCustomResource(CustomResource):
             FunctArn = self._resourceproperties.get('LambdaArn')
             S3Event = self._resourceproperties.get('S3Event')
             SendData = self._resourceproperties.get('SendAnonymousData')
+            AccountId = self._resourceproperties.get('AccountId')
 
             response = None
 
             if S3Event is not None:
                 S3Event = ast.literal_eval(S3Event)
                 S3Event['EventPattern']['LambdaFunctionConfigurations'][0]['LambdaFunctionArn'] = FunctArn
-                createS3Event(FunctName, S3Event)
+                createS3Event(FunctName, S3Event, AccountId)
 
             if SendData is not None:
                 log.debug("Sending Data: %s", SendData)
@@ -296,7 +301,7 @@ class myCustomResource(CustomResource):
 
             if CreateSshKey is not None:
                 CreateSshKey = ast.literal_eval(CreateSshKey)
-                s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
+                s3 = boto3.client('s3', config=Config(signature_version='s3v4', user_agent_extra=USER_AGENT_STRING))
                 s3.delete_object({'Bucket': CreateSshKey['Bucket'], 'Key': CreateSshKey['PrivateKey']})
                 s3.delete_object({'Bucket': CreateSshKey['Bucket'], 'Key': CreateSshKey['PublicKey']})
 
@@ -311,6 +316,7 @@ class myCustomResource(CustomResource):
 def lambda_handler(event, context):
     #print "Lambda Event \n", event
     #print "Lambda Context \n", context
+
     resource = myCustomResource(event)
     resource.process_event()
     return {'message': 'done'}

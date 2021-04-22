@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description" : "(SO0001) - Transit VPC: This template creates a dedicated transit VPC with Cisco CSRs for routing traffic. ***NOTE*** You must first subscribe to the appropriate Cisco CSR marketplace BYOL or License Included AMI from the AWS Marketplace before you launch this template. Version 5",
+  "Description" : "(SO0001) - Transit VPC: This template creates a dedicated transit VPC with Cisco CSRs for routing traffic. ***NOTE*** You must first subscribe to the appropriate Cisco CSR marketplace BYOL or License Included AMI from the AWS Marketplace before you launch this template. version %VERSION%",
 
   "Parameters" : {
     "KeyName" : {
@@ -135,32 +135,32 @@
   "Mappings" : {
     "Function" : {
       "SolutionHelper" : {
-        "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-solution-helper.zip",
+        "S3Bucket" : "%DIST_OUTPUT_BUCKET%",
+	      "S3Key" : "%SOLUTION_NAME%/%VERSION%/transit-vpc-solution-helper.zip",
         "Name" : "transit-vpc-solution-helper",
         "Handler": "transit_vpc_solution_helper/transit-vpc-solution-helper.lambda_handler",
         "Description": "Transit VPC: This function is invoked for custom resources.",
-        "Runtime": "python3.7",
+        "Runtime": "python3.8",
         "Timeout": "60",
         "MemorySize": "128"
       },
       "Configurator" : {
-        "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-push-cisco-config.zip",
+        "S3Bucket" : "%DIST_OUTPUT_BUCKET%",
+	      "S3Key" : "%SOLUTION_NAME%/%VERSION%/transit-vpc-push-cisco-config.zip",
         "Name" : "cisco-configurator",
         "Handler": "transit_vpc_push_cisco_config/lambda_function.lambda_handler",
         "Description": "Transit VPC: This function is invoked when a generic VPN configuration is placed in an S3 bucket - it converts the generic information into Cisco IOS specific commands and pushes the config to transit VPC routers.",
-        "Runtime": "python3.7",
+        "Runtime": "python3.8",
         "Timeout": "300",
         "MemorySize": "128"
       },
       "Poller" : {
-        "S3Bucket" : "%%BUCKET_NAME%%",
-	      "S3Key" : "transit-vpc/%%VERSION%%/transit-vpc-poller.zip",
+        "S3Bucket" : "%DIST_OUTPUT_BUCKET%",
+	      "S3Key" : "%SOLUTION_NAME%/%VERSION%/transit-vpc-poller.zip",
         "Name" : "vgw-poller",
         "Handler": "transit-vpc-poller.lambda_handler",
         "Description": "Transit VPC: Poller function responsible for identifying specifically tagged VGWs and creating VPN connections to transit VPC.",
-        "Runtime": "python3.7",
+        "Runtime": "python3.8",
         "Timeout": "120",
         "MemorySize": "128"
       },
@@ -172,21 +172,21 @@
       }
     },
     "CiscoCsrAMI" : {
-      "ap-south-1"    : { "BYOL": "ami-0126515024e181b2e", "LicenseIncluded": "ami-012e2d5a7048afe32" },
-      "eu-west-3"     : { "BYOL": "ami-030690944026827fc", "LicenseIncluded": "ami-028e6b1defb1f3071" },
-      "eu-west-2"     : { "BYOL": "ami-008715176303d298e", "LicenseIncluded": "ami-04897b16faacdf48f" },
-      "eu-west-1"     : { "BYOL": "ami-028ff7f30065ad8b3", "LicenseIncluded": "ami-02884305a2b03b67b" },
-      "ap-northeast-2": { "BYOL": "ami-0ce275bb065baac48", "LicenseIncluded": "ami-0dd7ffc338c5cff83" },
-      "ap-northeast-1": { "BYOL": "ami-09b350fd64ff59865", "LicenseIncluded": "ami-0f3f43158fe8c96fc" },
-      "sa-east-1"     : { "BYOL": "ami-073b915fb28bbfde0", "LicenseIncluded": "ami-04827a919fc29f946" },
-      "ca-central-1"  : { "BYOL": "ami-0705ab01e69f78310", "LicenseIncluded": "ami-0bdc99b952d2b636a" },
-      "ap-southeast-1": { "BYOL": "ami-0544121f2f619b39c", "LicenseIncluded": "ami-0d00def253ffc9ffc" },
-      "ap-southeast-2": { "BYOL": "ami-0162e0ac136ed0666", "LicenseIncluded": "ami-009555db80b895499" },
-      "eu-central-1"  : { "BYOL": "ami-04f69c92dcce31453", "LicenseIncluded": "ami-0026dc643b0d77fc5" },
-      "us-east-2"     : { "BYOL": "ami-07f8094154b663213", "LicenseIncluded": "ami-00e56dab70688b964" },
-      "us-east-1"     : { "BYOL": "ami-0d8a2f539abbd5763", "LicenseIncluded": "ami-060450ca7a4170427" },
-      "us-west-1"     : { "BYOL": "ami-0cf71f2688b924e36", "LicenseIncluded": "ami-002666afb57bfa7d0" },
-      "us-west-2"     : { "BYOL": "ami-01d5fc08abef26bc5", "LicenseIncluded": "ami-0f102b51dcabbf7ae" }
+      "ap-south-1"    : { "BYOL": "ami-00543ec5f37dbe4b7", "LicenseIncluded": "ami-0a02c559bdf1bee46" },
+      "eu-west-3"     : { "BYOL": "ami-0424769ba0620ab86", "LicenseIncluded": "ami-09daac3761e22fa64" },
+      "eu-west-2"     : { "BYOL": "ami-013da819f1901fa98", "LicenseIncluded": "ami-073da297c9fa1e325" },
+      "eu-west-1"     : { "BYOL": "ami-03b19a1f6f34c9ee0", "LicenseIncluded": "ami-0355d7892fcafb3ce" },
+      "ap-northeast-2": { "BYOL": "ami-0ea46cb656566cf94", "LicenseIncluded": "ami-05b8ee6bbdb3d7887" },
+      "ap-northeast-1": { "BYOL": "ami-01dcfa7774d7970ec", "LicenseIncluded": "ami-08316d08348d0a9d7" },
+      "sa-east-1"     : { "BYOL": "ami-0c34ed90208723180", "LicenseIncluded": "ami-0564bd6e4b146df79" },
+      "ca-central-1"  : { "BYOL": "ami-0e925dc68e145a956", "LicenseIncluded": "ami-0a42834976c32974d" },
+      "ap-southeast-1": { "BYOL": "ami-0457ce25738b0bd2f", "LicenseIncluded": "ami-0bfb37947dc1e6cc1" },
+      "ap-southeast-2": { "BYOL": "ami-04ec026dd7d9fe013", "LicenseIncluded": "ami-0c753885c83794609" },
+      "eu-central-1"  : { "BYOL": "ami-0518e478f5f1f2834", "LicenseIncluded": "ami-05598662389aa95b4" },
+      "us-east-2"     : { "BYOL": "ami-0f661119da34de2f6", "LicenseIncluded": "ami-077f4573aa77bdf5e" },
+      "us-east-1"     : { "BYOL": "ami-02dc259ccbfac00e4", "LicenseIncluded": "ami-0bf895b97beacde98" },
+      "us-west-1"     : { "BYOL": "ami-093178e44ff7d37f7", "LicenseIncluded": "ami-05f8a03b2a8371be2" },
+      "us-west-2"     : { "BYOL": "ami-0c749a3d7520271aa", "LicenseIncluded": "ami-0f509756bc1a57b06" }
     },
     "CsrInstance" : {
       "2x500Mbps"   : { "Type" : "c4.large",   "Bandwidth" : "500000" },
@@ -202,11 +202,39 @@
     },
     "Send" : {
       "AnonymousUsage" : { "Data" : "Yes" }
+    },
+    "LogRetention" : {
+      "Period" : { "Days" : 90 }
     }
   },
   "Resources" : {
     "VPNConfigS3Bucket" : {
-      "Type" : "AWS::S3::Bucket"
+      "Type" : "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "AccessControl": "LogDeliveryWrite",
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "AccessLogBucket"
+          }
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "VPNConfigBucketPolicy" : {
       "Type" : "AWS::S3::BucketPolicy",
@@ -240,6 +268,7 @@
       "Type" : "AWS::KMS::Key",
       "Properties" : {
         "Description" : "TransitVPC CMK for S3 SSE-KMS",
+        "EnableKeyRotation": true,
         "KeyPolicy" : {
           "Version": "2012-10-17",
           "Id": "transit-vpc-1",
@@ -291,7 +320,9 @@
         "Tags" : [
           { "Key" : "Name", "Value" : "Transit VPC" }
         ]
-      }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "VPCPubSub1" : {
       "Type" : "AWS::EC2::Subnet",
@@ -303,7 +334,9 @@
           { "Key" : "Network", "Value" : "Public" },
           { "Key" : "Name", "Value" : "Transit VPC Subnet1" }
         ]
-      }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "VPCPubSub2" : {
       "Type" : "AWS::EC2::Subnet",
@@ -315,7 +348,9 @@
           { "Key" : "Network", "Value" : "Public" },
           { "Key" : "Name", "Value" : "Transit VPC Subnet2" }
         ]
-      }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "IGW" : {
       "Type" : "AWS::EC2::InternetGateway",
@@ -449,7 +484,9 @@
 	  "ios-config-27=\"ip ssh server algorithm authentication publickey\"\n",
 	  "ios-config-28=\"ip ssh maxstartups 1\"\n"
         ]]}}
-      }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "VpcCsr2" : {
       "Type" : "AWS::EC2::Instance",
@@ -505,7 +542,9 @@
 	  "ios-config-27=\"ip ssh server algorithm authentication publickey\"\n",
 	  "ios-config-28=\"ip ssh maxstartups 1\"\n"
         ]]}}
-      }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
     },
     "SolutionHelperRole": {
       "Type": "AWS::IAM::Role",
@@ -531,6 +570,10 @@
             {
               "id": "F4",
               "reason": "This solution utilizes a solution helper function to support the creation/update/deletion of CWE for S3 and custom Lambda functions prior to the ability existing in CloudFormation natively. In order to support these provisioning activities, lambda:* and event:* permissions are required."
+            },
+            {
+              "id": "W12",
+              "reason": "Resource * is needed to describe VPCs, subnets and security groups"
             }
           ]
         }
@@ -560,13 +603,20 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
-		    "lambda:*",
-		    "events:*",
 		    "ec2:DescribeSecurityGroups",
 		    "ec2:DescribeSubnets",
-	            "ec2:DescribeVpcs"
+            "ec2:DescribeVpcs"
 		  ],
 		  "Resource": "*"
+		},
+        {
+		  "Effect": "Allow",
+		  "Action": [
+		    "lambda:InvokeFunction",
+            "lambda:RemovePermission",
+		    "lambda:AddPermission"
+		  ],
+		  "Resource": { "Fn::GetAtt" : [ "CiscoConfigFunction", "Arn" ] }
 		},
 		{
 		  "Effect": "Allow",
@@ -578,16 +628,16 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "s3:PutObject",
-                    "s3:GetObject",
-                    "s3:DeleteObject"
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject"
 		  ],
 		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" }, "/", {"Ref": "S3Prefix"}, "*" ]] }
 		},
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "s3:GetObject"
+              "s3:GetObject"
 		  ],
 		  "Resource": "arn:aws:s3:::solutions-reference/*"
 		}
@@ -609,8 +659,31 @@
         },
       	"Runtime": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Runtime"] },
         "MemorySize": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "MemorySize"] },
-      	"Timeout": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Timeout"] }
-     }
+      	"Timeout": { "Fn::FindInMap" : [ "Function", "SolutionHelper", "Timeout"] },
+        "Environment": {
+         "Variables": {
+           "USER_AGENT_STRING": "AwsSolution/SO0001/%VERSION%"
+         }
+       }
+     },
+     "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W58",
+              "reason": "Lambda functions has the required permission to write CloudWatch Logs. It uses custom policy instead of arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole with more tighter permissions."
+            },
+            {
+              "id": "W89",
+              "reason": "This lambda function does not need access to VPC resources"
+            },
+            {
+              "id": "W92",
+              "reason": "This use case does not need to set the ReservedConcurrentExecutions"
+            }
+          ]
+        }
+      }
    },
    "CreateRsaKey": {
      "Type": "Custom::LoadLambda",
@@ -668,25 +741,41 @@
 		  ],
 		  "Resource": { "Fn::Join" : ["", ["arn:aws:logs:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":log-group:/aws/lambda/*" ]]}
 		},
-		{
+        {
 		  "Effect": "Allow",
 		  "Action": [
-                    "ec2:CreateNetworkInterface",
-        	    "ec2:DescribeNetworkInterfaces",
-        	    "ec2:DetachNetworkInterface",
-        	    "ec2:DeleteNetworkInterface"
+              "ec2:CreateNetworkInterface",
+              "ec2:DetachNetworkInterface",
+              "ec2:DeleteNetworkInterface"
+		  ],
+		  "Resource": { "Fn::Join" : ["", ["arn:",{"Ref": "AWS::Partition"},":ec2:",{"Ref" : "AWS::Region"},":",{ "Ref" : "AWS::AccountId" }, ":*/*" ]]}
+		},
+        {
+		  "Effect": "Allow",
+		  "Action": [
+              "ec2:DescribeNetworkInterfaces"
 		  ],
 		  "Resource": "*"
 		},
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "s3:PutObject",
-                    "s3:GetObject"
+              "s3:PutObject",
+              "s3:GetObject"
 		  ],
 		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" }, "/", {"Ref": "S3Prefix"}, "*" ]] }
 		}
 	     ]
+        }
+      },
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W12",
+              "reason": "Resource * is needed to describe and create network interfaces"
+            }
+          ]
         }
       }
    },
@@ -714,15 +803,31 @@
        "Environment": {
          "Variables": {
            "CONFIG_FILE": "transit_vpc_config.txt",
-           "LOG_LEVEL":"INFO"
+           "LOG_LEVEL":"INFO",
+           "USER_AGENT_STRING": "AwsSolution/SO0001/%VERSION%"
          }
        }
-     }
+     },
+     "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W58",
+              "reason": "Lambda functions has the required permission to write CloudWatch Logs. It uses custom policy instead of arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole with more tighter permissions."
+            },
+            {
+              "id": "W92",
+              "reason": "This use case does not need to set the ReservedConcurrentExecutions"
+            }
+          ]
+        }
+      }
    },
    "CiscoConfigS3Event": {
      "Type": "Custom::LoadLambda",
      "Properties": {
        "ServiceToken": { "Fn::GetAtt" : ["SolutionHelper", "Arn"] },
+       "AccountId": { "Ref" : "AWS::AccountId" },
        "FunctionName": { "Fn::Join": ["-", [ { "Ref" : "AWS::StackName" }, { "Fn::FindInMap" : [ "Function", "Configurator", "Name"]}	]] },
        "LambdaArn": { "Fn::GetAtt" : ["CiscoConfigFunction", "Arn"] },
        "S3Event" : { "Fn::Join": ["", [
@@ -810,27 +915,43 @@
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "ec2:DescribeRegions",
-                    "ec2:DescribeVpnGateways",
-                    "ec2:DescribeVpnConnections",
-                    "ec2:CreateTags",
-                    "ec2:CreateCustomerGateway",
-                    "ec2:DeleteCustomerGateway",
-                    "ec2:CreateVpnConnection",
-                    "ec2:DeleteVpnConnection"
+              "ec2:CreateTags",
+              "ec2:CreateCustomerGateway",
+              "ec2:DeleteCustomerGateway",
+              "ec2:CreateVpnConnection",
+              "ec2:DeleteVpnConnection"
+		  ],
+		  "Resource": { "Fn::Join" : ["", ["arn:",{"Ref": "AWS::Partition"},":ec2:*:",{ "Ref" : "AWS::AccountId" }, ":*/*" ]]}
+		},
+        {
+		  "Effect": "Allow",
+		  "Action": [
+              "ec2:DescribeRegions",
+              "ec2:DescribeVpnGateways",
+              "ec2:DescribeVpnConnections"
 		  ],
 		  "Resource": "*"
 		},
 		{
 		  "Effect": "Allow",
 		  "Action": [
-                    "s3:PutObject",
-                    "s3:PutObjectAcl",
-                    "s3:GetObject"
+            "s3:PutObject",
+            "s3:PutObjectAcl",
+            "s3:GetObject"
 		  ],
 		  "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref" : "VPNConfigS3Bucket" }, "/", {"Ref": "S3Prefix"}, "*" 	]] }
 		}
 	     ]
+        }
+      },
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W12",
+              "reason": "Resource * is needed to describe and create vpn connections, regions, tags, customer gateways"
+            }
+          ]
         }
       }
     },
@@ -858,8 +979,27 @@
             "BUCKET_NAME": { "Ref" : "VPNConfigS3Bucket" },
             "BUCKET_PREFIX": { "Ref" : "S3Prefix" },
             "CONFIG_FILE": "transit_vpc_config.txt",
-            "LOG_LEVEL":"INFO"
+            "LOG_LEVEL":"INFO",
+            "USER_AGENT_STRING": "AwsSolution/SO0001/%VERSION%"
           }
+        }
+      },
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W58",
+              "reason": "Lambda functions has the required permission to write CloudWatch Logs. It uses custom policy instead of arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole with more tighter permissions."
+            },
+            {
+              "id": "W89",
+              "reason": "This lambda function does not need access to VPC resources"
+            },
+            {
+              "id": "W92",
+              "reason": "This use case does not need to set the ReservedConcurrentExecutions"
+            }
+          ]
         }
       }
     },
@@ -889,11 +1029,42 @@
       "Properties" : {
         "GroupDescription" : "CSR Security Group Rules",
         "VpcId" : { "Ref" : "TransitVPC" },
-        "SecurityGroupIngress" : [
-           { "IpProtocol" : "tcp", "FromPort" : "22",  "ToPort" : "22",  "SourceSecurityGroupId" : { "Ref" : "CiscoConfigSecurityGroup" }}
-	],
-        "SecurityGroupEgress" : [
-           { "IpProtocol" : "-1", "FromPort" : "0", "ToPort" : "65535", "CidrIp" : "0.0.0.0/0" } ]
+        "SecurityGroupIngress" : [{
+           "Description": "Security rule for for inbound TCP traffic",
+           "IpProtocol" : "tcp",
+           "FromPort" : "22",
+           "ToPort" : "22",
+           "SourceSecurityGroupId" : {
+             "Ref" : "CiscoConfigSecurityGroup"
+           }
+        }],
+        "SecurityGroupEgress" : [{
+          "Description": "Security Rule for outbound traffic",
+          "IpProtocol" : "-1",
+          "FromPort" : "0",
+          "ToPort" : "65535",
+          "CidrIp" : "0.0.0.0/0"
+        }]
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W40",
+              "reason": "IpProtocol -1 used to allow all traffic. We recommend that you review the security groups and further restrict access as needed once the deployment is up and running"
+            },
+            {
+              "id": "W5",
+              "reason": "Open CIDR used to connect to any VPC."
+            },
+            {
+              "id": "W29",
+              "reason": "Port range used to allow for transit vpc traffic."
+            }
+          ]
+        }
       }
     },
     "CiscoConfigSecurityGroup" : {
@@ -901,12 +1072,30 @@
       "Properties" : {
         "GroupDescription" : "Transit VPC Automation Security Group Rules",
         "VpcId" : { "Ref" : "TransitVPC" },
-        "SecurityGroupEgress" : [{ "IpProtocol" : "tcp", "FromPort" : "443", "ToPort" : "443", "CidrIp" : "0.0.0.0/0" }]
+        "SecurityGroupEgress" : [{
+          "Description": "Security rule for outbound TCP traffic",
+          "IpProtocol" : "tcp",
+          "FromPort" : "443",
+          "ToPort" : "443",
+          "CidrIp" : "0.0.0.0/0" }]
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W5",
+              "reason": "Open CIDR used to allow api calls from lambda function."
+            }
+          ]
+        }
       }
     },
     "SSHtoCSR": {
       "Type": "AWS::EC2::SecurityGroupEgress",
-      "Properties":{
+      "Properties": {
+        "Description": "Egress Security rule",
         "IpProtocol": "tcp",
         "FromPort": "22",
         "ToPort": "22",
@@ -979,8 +1168,184 @@
               ]]
             }
         }
+    },
+    "FlowLog": {
+      "Type": "AWS::EC2::FlowLog",
+      "Properties": {
+        "ResourceId": {
+          "Ref": "TransitVPC"
+        },
+        "ResourceType": "VPC",
+        "TrafficType": "ALL",
+        "DeliverLogsPermissionArn": {
+          "Fn::GetAtt": [
+            "RoleFlowLogs",
+            "Arn"
+          ]
+        },
+        "LogGroupName": {
+          "Ref": "AWS::StackName"
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "RoleFlowLogs": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "vpc-flow-logs.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "FlowLogPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup",
+                "logs:DescribeLogGroups"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "LogGroupFlowLogs",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "FlowLogPolicy",
+        "Roles": [
+          {
+            "Ref": "RoleFlowLogs"
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "LogGroupFlowLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "AWS::StackName"
+        },
+        "RetentionInDays": { "Fn::FindInMap" : [ "LogRetention", "Period", "Days"]}
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W84",
+              "reason": "CloudWatch logs are encrypted by the service"
+            }
+          ]
+        }
+      }
+    },
+    "AccessLogBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W35",
+              "reason": "access logging disabled, its a logging bucket"
+            }
+          ]
+        }
+      }
+    },
+    "AccessLogBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "AccessLogBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              },
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AccessLogBucket",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AccessLogBucket",
+                          "Arn"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Sid": "HttpsOnly"
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      }
     }
+
   },
+
   "Outputs" : {
     "CSR1" : {
       "Description" : "IP Address for CSR1",
