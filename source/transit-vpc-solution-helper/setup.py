@@ -31,7 +31,7 @@ setup(
     package_dir={'transit_vpc_solution_helper': '.', 'pycfn_custom_resource' : './pycfn_custom_resource'},
     install_requires=[
         'paramiko>=1.16.0',
-        'requests==2.2.0',
+        'requests==2.20.0',
         'cffi==1.14.3'
     ],
     classifiers=[
